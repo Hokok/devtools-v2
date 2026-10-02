@@ -3,7 +3,7 @@ name: CI
 # PR / 主干推送：前端单测 + 类型检查 + 构建 + Rust 编译检查（双平台）
 on:
   push:
-    branches: [main]
+    branches: [master, main]
   pull_request:
 
 jobs:
