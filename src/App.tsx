@@ -134,7 +134,7 @@ function ConfirmExitDialog() {
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 backdrop-blur-[2px]">
-      <div className="w-[360px] max-w-[90vw] rounded-xl border border-line-strong bg-panel p-5 shadow-[0_24px_80px_rgba(0,0,0,0.55)]">
+      <div className="w-[360px] max-w-[90vw] rounded-xl border border-line-strong bg-panel p-4 shadow-[0_24px_80px_rgba(0,0,0,0.55)]">
         <h2 className="text-sm font-medium text-text">确定退出 DevTools？</h2>
         <p className="mt-2 text-xs leading-5 text-muted">
           有标签页包含未处理完的内容。应用不保存会话，退出后这些内容将丢失。
@@ -166,7 +166,7 @@ function StatusBar() {
   const setPaletteOpen = useUi((s) => s.setPaletteOpen);
 
   return (
-    <footer className="flex h-6 shrink-0 items-center gap-3 border-t border-line bg-panel px-3 text-[10px] text-faint">
+    <footer className="flex h-5 shrink-0 items-center gap-3 border-t border-line bg-panel px-2 text-[10px] text-faint">
       <span className="text-accent/70">◆</span>
       <span>{activeToolId ? getTool(activeToolId)?.meta.name : "就绪"}</span>
       <span className="text-line-strong">|</span>

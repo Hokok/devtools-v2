@@ -129,7 +129,7 @@ export function CommandPalette() {
         onMouseDown={(e) => e.stopPropagation()}
         style={{ animation: "palette-pop 120ms ease-out" }}
       >
-        <div className="flex items-center gap-2.5 border-b border-line px-4">
+        <div className="flex items-center gap-2.5 border-b border-line px-3">
           <Search size={15} className="shrink-0 text-faint" />
           <input
             ref={inputRef}
@@ -139,7 +139,7 @@ export function CommandPalette() {
               setCursor(0);
             }}
             placeholder="搜索工具或命令…"
-            className="h-12 w-full bg-transparent text-sm text-text outline-none placeholder:text-faint"
+            className="h-10 w-full bg-transparent text-sm text-text outline-none placeholder:text-faint"
           />
           <span className="kbd shrink-0">ESC</span>
         </div>
@@ -163,7 +163,7 @@ export function CommandPalette() {
                   onMouseEnter={() => setCursor(i)}
                   onClick={() => commit(i)}
                   className={[
-                    "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
+                    "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors",
                     selected ? "bg-active" : "",
                   ].join(" ")}
                 >

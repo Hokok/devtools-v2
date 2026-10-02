@@ -13,10 +13,10 @@
     "windows": [
       {
         "title": "DevTools",
-        "width": 1280,
-        "height": 820,
-        "minWidth": 960,
-        "minHeight": 600,
+        "width": 1200,
+        "height": 760,
+        "minWidth": 880,
+        "minHeight": 540,
         "center": true
       }
     ],

@@ -21,7 +21,7 @@ export function TabBar() {
   };
 
   return (
-    <div className="flex h-10 shrink-0 items-center border-b border-line bg-bg pr-2 pl-1.5">
+    <div className="flex h-7 shrink-0 items-center border-b border-line bg-bg pr-1.5 pl-1">
       <div
         ref={scrollRef}
         className="scrollbar-none flex min-w-0 flex-1 items-center gap-1 overflow-x-auto"
@@ -49,7 +49,7 @@ export function TabBar() {
               }}
               title={tool?.meta.description}
               className={[
-                "group flex h-[27px] shrink-0 items-center gap-1.5 rounded-md border px-2.5 text-xs transition-colors",
+                "group flex h-[22px] shrink-0 items-center gap-1 rounded-md border px-1.5 text-xs transition-colors",
                 active
                   ? "border-line-strong bg-panel text-text"
                   : "border-transparent text-muted hover:bg-hover hover:text-text",
@@ -80,7 +80,7 @@ export function TabBar() {
       </div>
 
       <button
-        className="icon-btn h-7 w-7"
+        className="icon-btn"
         title={settingsOpen ? "收起设置面板" : "打开设置面板"}
         onClick={toggleSettings}
       >

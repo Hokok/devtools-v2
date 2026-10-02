@@ -19,10 +19,10 @@ export function SettingsPanel() {
   return (
     <aside
       className="z-10 shrink-0 overflow-hidden border-l border-line bg-panel transition-[width] duration-200 ease-out"
-      style={{ width: open ? 272 : 0 }}
+      style={{ width: open ? 192 : 0 }}
     >
-      <div className="flex h-full w-[272px] flex-col">
-        <header className="flex h-10 shrink-0 items-center gap-2 border-b border-line px-3.5">
+      <div className="flex h-full w-[192px] flex-col">
+        <header className="flex h-8 shrink-0 items-center gap-2 border-b border-line px-2">
           <span className="text-[10px] font-medium tracking-[0.18em] text-faint uppercase">设置</span>
           <span className="truncate text-xs text-text">{tool?.name ?? ""}</span>
           {tool?.settingsSchema && tool.settingsSchema.length > 0 && (
@@ -32,7 +32,7 @@ export function SettingsPanel() {
           )}
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-3.5">
+        <div className="min-h-0 flex-1 overflow-y-auto p-2">
           {!tool ? (
             <p className="text-xs leading-5 text-faint">激活一个工具后，可在此配置它的选项。</p>
           ) : !tool.settingsSchema || tool.settingsSchema.length === 0 ? (
@@ -75,7 +75,7 @@ function FieldControl({
     // 注意：不能用 <label> 包 button——label 的默认激活行为会二次派发 click，开关切两次等于没切
     return (
       <div
-        className="mb-3.5 flex cursor-pointer items-start justify-between gap-3"
+        className="mb-2 flex cursor-pointer items-start justify-between gap-3"
         onClick={() => onChange(!checked)}
       >
         <span>
@@ -98,12 +98,12 @@ function FieldControl({
 
   if (field.type === "select") {
     return (
-      <div className="mb-3.5">
+      <div className="mb-2">
         <label className="field-label">{field.label}</label>
         <select
           value={String(settings[field.key] ?? field.default)}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full appearance-none rounded-md border border-line bg-raise px-2 py-1.5 text-xs text-text transition-colors hover:border-line-strong"
+          className="w-full appearance-none rounded-md border border-line bg-raise px-2 py-1 text-xs text-text transition-colors hover:border-line-strong"
         >
           {field.options.map((o) => (
             <option key={o.value} value={o.value}>
@@ -117,7 +117,7 @@ function FieldControl({
 
   if (field.type === "number") {
     return (
-      <div className="mb-3.5">
+      <div className="mb-2">
         <label className="field-label">{field.label}</label>
         <input
           type="number"
@@ -126,30 +126,30 @@ function FieldControl({
           max={field.max}
           step={field.step}
           onChange={(e) => onChange(Number(e.target.value))}
-          className="w-full rounded-md border border-line bg-raise px-2 py-1.5 text-xs text-text transition-colors hover:border-line-strong"
+          className="w-full rounded-md border border-line bg-raise px-2 py-1 text-xs text-text transition-colors hover:border-line-strong"
         />
       </div>
     );
   }
 
   return (
-    <div className="mb-3.5">
+    <div className="mb-2">
       <label className="field-label">{field.label}</label>
       <input
         type="text"
         value={String(settings[field.key] ?? field.default)}
         placeholder={field.placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-md border border-line bg-raise px-2 py-1.5 text-xs text-text transition-colors hover:border-line-strong"
+        className="w-full rounded-md border border-line bg-raise px-2 py-1 text-xs text-text transition-colors hover:border-line-strong"
       />
     </div>
   );
 }
 
 function DividerField({ field }: { field: Extract<SettingField, { type: "divider" }> }) {
-  if (!field.label) return <hr className="my-3.5 border-line" />;
+  if (!field.label) return <hr className="my-2 border-line" />;
   return (
-    <div className="my-3.5 flex items-center gap-2">
+    <div className="my-2 flex items-center gap-2">
       <span className="text-[10px] tracking-[0.14em] text-faint uppercase">{field.label}</span>
       <hr className="flex-1 border-line" />
     </div>

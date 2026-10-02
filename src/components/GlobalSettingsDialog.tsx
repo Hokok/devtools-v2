@@ -33,14 +33,14 @@ export function GlobalSettingsDialog() {
       <div
         role="dialog"
         aria-label="全局设置"
-        className="w-[420px] max-w-[90vw] rounded-xl border border-line-strong bg-panel p-5 shadow-[0_24px_80px_rgba(0,0,0,0.55)]"
+        className="w-[420px] max-w-[90vw] rounded-xl border border-line-strong bg-panel p-4 shadow-[0_24px_80px_rgba(0,0,0,0.55)]"
         onMouseDown={(e) => e.stopPropagation()}
         style={{ animation: "palette-pop 120ms ease-out" }}
       >
         <h2 className="text-sm font-medium text-text">全局设置</h2>
         <p className="mt-1 text-xs text-faint">作用于整个应用，即改即存、跨重启保留。</p>
 
-        <section className="mt-5">
+        <section className="mt-4">
           <h3 className="text-[10px] font-medium tracking-[0.18em] text-faint uppercase">外观</h3>
           <Segmented<ThemeMode>
             value={themeMode}
@@ -71,7 +71,7 @@ export function GlobalSettingsDialog() {
           </p>
         </section>
 
-        <div className="mt-5 flex justify-end">
+        <div className="mt-4 flex justify-end">
           <button
             onClick={close}
             className="rounded-md border border-line bg-raise px-3 py-1.5 text-xs text-text transition-colors hover:bg-hover"

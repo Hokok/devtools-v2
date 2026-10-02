@@ -92,7 +92,7 @@ export function LayoutTemplate({ tool, input, onInput, settings }: LayoutTemplat
   }, [onInput, flash]);
 
   return (
-    <div ref={containerRef} className={`flex h-full min-h-0 gap-1 p-3 ${horizontal ? "flex-row" : "flex-col"}`}>
+    <div ref={containerRef} className={`flex h-full min-h-0 gap-0.5 p-1 ${horizontal ? "flex-row" : "flex-col"}`}>
       <div
         className="flex min-h-0 min-w-0"
         style={horizontal ? { width: `${ratio * 100}%` } : { height: `${ratio * 100}%` }}
@@ -233,7 +233,7 @@ export function LayoutTemplate({ tool, input, onInput, settings }: LayoutTemplat
           }
         >
           {result.error && (
-            <div className="mx-3 mt-2 flex items-start gap-2 rounded-md border border-danger/25 bg-danger/8 px-2.5 py-1.5 text-xs text-danger">
+            <div className="mx-2 mt-1 flex items-start gap-2 rounded-md border border-danger/25 bg-danger/8 px-2.5 py-1.5 text-xs text-danger">
               <TriangleAlert size={13} className="mt-0.5 shrink-0" />
               <span className="break-all">
                 {result.error.message}
@@ -274,7 +274,7 @@ function Card({
 }) {
   return (
     <section className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-lg border border-line bg-panel">
-      <header className="flex h-8 shrink-0 items-center gap-2 border-b border-line px-3">
+      <header className="flex h-6 shrink-0 items-center gap-1.5 border-b border-line px-2">
         <span className="text-[10px] font-medium tracking-[0.18em] text-faint uppercase">{label}</span>
         <span className="truncate text-[10px] text-faint">{meta}</span>
         <span className="ml-auto flex items-center gap-0.5">{actions}</span>

@@ -43,9 +43,9 @@ export function RegexTester({ input, onInput, settings, onSettingsChange, sample
   );
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-2 p-3">
+    <div className="flex h-full min-h-0 flex-col gap-2 p-1">
       {/* 模式栏 */}
-      <div className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-line bg-panel px-2.5">
+      <div className="flex h-7 shrink-0 items-center gap-1.5 rounded-lg border border-line bg-panel px-2">
         <span className="select-none text-sm text-accent">/</span>
         <input
           value={pattern}
@@ -84,7 +84,7 @@ export function RegexTester({ input, onInput, settings, onSettingsChange, sample
       <div className="flex min-h-0 flex-1 gap-2">
         {/* 测试文本 */}
         <section className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-lg border border-line bg-panel">
-          <header className="flex h-8 shrink-0 items-center gap-2 border-b border-line px-3">
+          <header className="flex h-6 shrink-0 items-center gap-2 border-b border-line px-2">
             <span className="text-[10px] font-medium tracking-[0.18em] text-faint uppercase">
               测试文本
             </span>
@@ -128,8 +128,8 @@ export function RegexTester({ input, onInput, settings, onSettingsChange, sample
 
 function MatchList({ matches }: { matches: RegexMatchInfo[] }) {
   return (
-    <section className="hidden w-[300px] shrink-0 flex-col overflow-hidden rounded-lg border border-line bg-panel md:flex">
-      <header className="flex h-8 shrink-0 items-center border-b border-line px-3">
+    <section className="hidden w-[232px] shrink-0 flex-col overflow-hidden rounded-lg border border-line bg-panel md:flex">
+      <header className="flex h-6 shrink-0 items-center border-b border-line px-2">
         <span className="text-[10px] font-medium tracking-[0.18em] text-faint uppercase">匹配</span>
       </header>
       <div className="min-h-0 flex-1 overflow-y-auto">
@@ -137,7 +137,7 @@ function MatchList({ matches }: { matches: RegexMatchInfo[] }) {
           <p className="px-3 py-4 text-xs text-faint">{T.noMatch}</p>
         ) : (
           matches.map((m, i) => (
-            <div key={i} className="border-b border-line/60 px-3 py-2 text-xs">
+            <div key={i} className="border-b border-line/60 px-2.5 py-1.5 text-xs">
               <div className="flex items-baseline gap-2">
                 <span className="text-[10px] text-faint">#{i + 1}</span>
                 <span className="min-w-0 flex-1 truncate text-text">{m.text || "(空匹配)"}</span>

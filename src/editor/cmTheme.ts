@@ -11,7 +11,7 @@ import { EditorView } from "@codemirror/view";
 const darkView = EditorView.theme(
   {
     "&": { color: "#e6edf3", backgroundColor: "transparent", height: "100%", fontSize: "12.5px" },
-    ".cm-scroller": { fontFamily: "inherit", lineHeight: "1.65", padding: "8px 0 24px" },
+    ".cm-scroller": { fontFamily: "inherit", lineHeight: "1.5", padding: "3px 0 4px" },
     ".cm-content": { caretColor: "#4493f8" },
     ".cm-cursor, .cm-dropCursor": { borderLeftColor: "#4493f8", borderLeftWidth: "2px" },
     "&.cm-focused": { outline: "none" },
@@ -22,8 +22,8 @@ const darkView = EditorView.theme(
       backgroundColor: "transparent",
       color: "#6e7681",
       border: "none",
-      paddingRight: "8px",
-      paddingLeft: "10px",
+      paddingRight: "4px",
+      paddingLeft: "6px",
     },
     ".cm-activeLineGutter": { backgroundColor: "transparent", color: "#8d96a0" },
     ".cm-activeLine": { backgroundColor: "rgba(110, 118, 129, 0.08)" },
@@ -68,7 +68,7 @@ const darkHighlight = syntaxHighlighting(
 const lightView = EditorView.theme(
   {
     "&": { color: "#1f2328", backgroundColor: "transparent", height: "100%", fontSize: "12.5px" },
-    ".cm-scroller": { fontFamily: "inherit", lineHeight: "1.65", padding: "8px 0 24px" },
+    ".cm-scroller": { fontFamily: "inherit", lineHeight: "1.5", padding: "3px 0 4px" },
     ".cm-content": { caretColor: "#0969da" },
     ".cm-cursor, .cm-dropCursor": { borderLeftColor: "#0969da", borderLeftWidth: "2px" },
     "&.cm-focused": { outline: "none" },
@@ -79,8 +79,8 @@ const lightView = EditorView.theme(
       backgroundColor: "transparent",
       color: "#818b98",
       border: "none",
-      paddingRight: "8px",
-      paddingLeft: "10px",
+      paddingRight: "4px",
+      paddingLeft: "6px",
     },
     ".cm-activeLineGutter": { backgroundColor: "transparent", color: "#59636e" },
     ".cm-activeLine": { backgroundColor: "rgba(135, 131, 120, 0.08)" },

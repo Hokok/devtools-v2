@@ -19,20 +19,20 @@ export function SideNav() {
   return (
     <aside
       className="z-10 flex shrink-0 flex-col border-r border-line bg-panel transition-[width] duration-200 ease-out"
-      style={{ width: collapsed ? 52 : 208 }}
+      style={{ width: collapsed ? 36 : 130 }}
     >
       {/* 品牌区 + 收缩开关（顶部，与右侧设置面板的开关位置对称） */}
-      <div className={`shrink-0 border-b border-line ${collapsed ? "flex flex-col items-center gap-1 py-2.5" : "flex h-12 items-center gap-2.5 pl-3.5 pr-2"}`}>
-        <div className={`flex items-center gap-2.5 ${collapsed ? "" : "min-w-0"}`}>
+      <div className={`shrink-0 border-b border-line ${collapsed ? "flex flex-col items-center gap-1 py-1.5" : "flex h-8 items-center gap-1.5 pl-2 pr-1"}`}>
+        <div className={`flex items-center gap-1 ${collapsed ? "" : "min-w-0"}`}>
           <LogoMark />
           {!collapsed && (
-            <span className="truncate text-[13px] font-semibold tracking-[0.22em] text-text select-none">
+            <span className="truncate text-[11px] font-semibold tracking-[0.1em] text-text select-none">
               DEVTOOLS
             </span>
           )}
         </div>
         <button
-          className="icon-btn h-7 w-7 shrink-0"
+          className="icon-btn shrink-0"
           title={collapsed ? "展开菜单" : "收缩菜单"}
           onClick={toggleNav}
         >
@@ -40,18 +40,18 @@ export function SideNav() {
         </button>
       </div>
 
-      <nav className="min-h-0 flex-1 overflow-y-auto py-2">
+      <nav className="min-h-0 flex-1 overflow-y-auto py-1">
         {TOOL_GROUPS.map((group) => {
           const tools = registry.filter((t) => t.meta.group === group.id);
           if (tools.length === 0) return null;
           return (
-            <div key={group.id} className="mb-1.5">
+            <div key={group.id} className="mb-1">
               {!collapsed && (
-                <div className="px-4 pt-2 pb-1 text-[10px] tracking-[0.16em] text-faint uppercase">
+                <div className="px-2 pt-1 pb-0.5 text-[10px] tracking-[0.16em] text-faint uppercase">
                   {group.name}
                 </div>
               )}
-              {collapsed && <div className="mx-3 my-2 border-t border-line" />}
+              {collapsed && <div className="mx-2 my-1 border-t border-line" />}
               {tools.map((tool) => {
                 const Icon = tool.meta.icon;
                 const active = tool.meta.id === activeToolId;
@@ -61,8 +61,8 @@ export function SideNav() {
                     title={collapsed ? tool.meta.name : undefined}
                     onClick={() => openTool(tool.meta.id)}
                     className={[
-                      "group relative flex h-[30px] w-full items-center gap-2.5 text-left text-xs transition-colors",
-                      collapsed ? "justify-center" : "px-3.5",
+                      "group relative flex h-[24px] w-full items-center gap-1.5 text-left text-xs transition-colors",
+                      collapsed ? "justify-center" : "px-2",
                       active
                         ? "bg-active text-accent"
                         : "text-muted hover:bg-hover hover:text-text",
@@ -71,7 +71,7 @@ export function SideNav() {
                     {active && (
                       <span className="absolute top-1.5 bottom-1.5 left-0 w-[2px] rounded-r bg-accent" />
                     )}
-                    <Icon size={15} className={active ? "text-accent" : "text-faint group-hover:text-muted"} />
+                    <Icon size={14} className={active ? "text-accent" : "text-faint group-hover:text-muted"} />
                     {!collapsed && <span className="truncate">{tool.meta.name}</span>}
                   </button>
                 );
@@ -82,9 +82,9 @@ export function SideNav() {
       </nav>
 
       {/* 底部只留全局设置入口（命令面板走 Ctrl/Cmd+K，主题切换在设置弹窗与命令面板） */}
-      <div className="flex shrink-0 items-center border-t border-line p-2">
+      <div className="flex shrink-0 items-center border-t border-line p-1">
         <button
-          className="icon-btn h-7 w-7"
+          className="icon-btn"
           title="全局设置 (Ctrl/Cmd+,)"
           onClick={() => setGlobalSettingsOpen(true)}
         >
