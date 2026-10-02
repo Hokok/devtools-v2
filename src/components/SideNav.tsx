@@ -1,4 +1,4 @@
-import { ChevronsLeft, ChevronsRight, Moon, Search, Settings, Sun } from "lucide-react";
+import { ChevronsLeft, ChevronsRight, Settings } from "lucide-react";
 import { registry } from "../platform/registry";
 import { TOOL_GROUPS } from "../platform/types";
 import { useTabs } from "../platform/stores/tabs";
@@ -9,9 +9,6 @@ import { LogoMark } from "./EmptyState";
 export function SideNav() {
   const collapsed = useUi((s) => s.navCollapsed);
   const toggleNav = useUi((s) => s.toggleNav);
-  const theme = useUi((s) => s.theme);
-  const toggleTheme = useUi((s) => s.toggleTheme);
-  const setPaletteOpen = useUi((s) => s.setPaletteOpen);
   const setGlobalSettingsOpen = useUi((s) => s.setGlobalSettingsOpen);
   const tabs = useTabs((s) => s.tabs);
   const activeId = useTabs((s) => s.activeId);
@@ -84,27 +81,14 @@ export function SideNav() {
         })}
       </nav>
 
-      <div className={`flex shrink-0 items-center border-t border-line p-2 ${collapsed ? "flex-col gap-1" : "justify-between"}`}>
-        <button
-          className="icon-btn h-7 w-7"
-          title="命令面板 (Ctrl/Cmd+K)"
-          onClick={() => setPaletteOpen(true)}
-        >
-          <Search size={14} />
-        </button>
+      {/* 底部只留全局设置入口（命令面板走 Ctrl/Cmd+K，主题切换在设置弹窗与命令面板） */}
+      <div className="flex shrink-0 items-center border-t border-line p-2">
         <button
           className="icon-btn h-7 w-7"
           title="全局设置 (Ctrl/Cmd+,)"
           onClick={() => setGlobalSettingsOpen(true)}
         >
           <Settings size={14} />
-        </button>
-        <button
-          className="icon-btn h-7 w-7"
-          title={theme === "dark" ? "切换到浅色主题" : "切换到深色主题"}
-          onClick={toggleTheme}
-        >
-          {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
         </button>
       </div>
     </aside>

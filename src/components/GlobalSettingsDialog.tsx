@@ -52,7 +52,7 @@ export function GlobalSettingsDialog() {
             ]}
           />
           <p className="mt-1.5 text-[10px] leading-4 text-faint">
-            GitHub Primer 配色；跟随系统时随操作系统外观实时切换，侧栏日/月按钮可快捷切换深浅。
+            GitHub Primer 配色；跟随系统时随操作系统外观实时切换，深浅也可在命令面板（Ctrl/Cmd+K）一键互换。
           </p>
         </section>
 
