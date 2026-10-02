@@ -1,18 +1,17 @@
 # 发布清单（v0.1 起每版照此执行）
 
-## 前置（只做一次）
+## 前置（✅ 已于 2026-10-02 完成）
 
-1. **创建 GitHub 仓库并推送**（工作流假设默认分支为 `main`）。
-2. **配置 Actions secrets**（Settings → Secrets and variables → Actions）：
+1. **仓库**：https://github.com/Hokok/devtools-v2 （公开，默认分支 `main`）
+2. **Actions secrets**（已配置）：
 
    | Secret | 值 |
    |---|---|
-   | `TAURI_SIGNING_PRIVATE_KEY` | `cat ~/.tauri/devtools-app.key` 的完整内容（私钥文件在仓库外，**绝不入库**；丢失则已发布的用户永远无法自动更新） |
-   | `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | 空字符串（密钥生成时未设密码） |
+   | `TAURI_SIGNING_PRIVATE_KEY` | `~/.tauri/devtools-app.key` 的内容（私钥在仓库外，**绝不入库**；丢失则已发布的用户永远无法自动更新） |
+   | `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | 空（密钥生成时未设密码） |
 
-3. **替换 updater 端点**：`src-tauri/tauri.conf.json` 中
-   `plugins.updater.endpoints` 里的 `YOUR_GITHUB_ACCOUNT` 改成实际 GitHub 用户名/组织名。
-   这是更新检查的地址，指错只会让更新检查静默失败，不影响应用其他功能。
+3. **updater 端点**：`tauri.conf.json` 已指向
+   `https://github.com/Hokok/devtools-v2/releases/latest/download/latest.json`。
 
 ## 每次发版
 

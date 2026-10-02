@@ -67,14 +67,13 @@ src/tools/my-tool/
 CI / 自动更新 / 签名的完整说明见 [docs/RELEASE.md](docs/RELEASE.md)。摘要：
 
 - `pnpm tauri dev` 启动桌面窗口（Rust 侧含原生菜单：⌘W = 关闭标签页）；
-- 打 `v*` tag 触发 GitHub Actions 双端构建（macOS Apple Silicon/Intel + Windows NSIS），
-  产物以 Draft Release 挂载并附带 updater 的 `latest.json`；
-- updater 签名密钥在 `~/.tauri/devtools-app.key`（仓库外，绝不入库）；发布前需把
-  `tauri.conf.json` 里的 `YOUR_GITHUB_ACCOUNT` 替换为实际仓库路径，并在 CI secrets 配置私钥。
+- 仓库：https://github.com/Hokok/devtools-v2 ，打 `v*` tag 触发 GitHub Actions 双端构建
+  （macOS Apple Silicon/Intel + Windows NSIS），产物以 Draft Release 挂载并附带 updater 的 `latest.json`；
+- updater 签名私钥在 `~/.tauri/devtools-app.key`（仓库外，绝不入库），公钥已编进安装包。
 
 ## 待办（v0.1 之后）
 
-- [ ] 创建 GitHub 仓库、配置 secrets、替换 updater 端点（见 docs/RELEASE.md 前置三步）
+- [x] 创建 GitHub 仓库、配置 secrets、updater 端点（已就绪，打 tag 即可发版）
 - [ ] Windows 侧真机/CI 出包冒烟（WebView2 渲染、Ctrl+W、安装器）
 - [ ] 前端自动更新检查 UI（插件与签名已接线，`tauri-plugin-updater` 24h 静默检查）
 - [ ] 体验迭代：Tab 拖拽排序、主题跟随系统、错误行号点击跳转、命令面板命中高亮
