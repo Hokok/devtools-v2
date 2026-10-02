@@ -12,7 +12,7 @@ export default defineConfig({
   worker: { format: "es" },
   build: {
     target: "es2022",
-    minify: "esbuild",
+    minify: "oxc", // Vite 8 默认压缩器；esbuild 已弃用且需单独安装
     sourcemap: false,
     // 工具实现的分包由 registry 的动态 import() 保证，无需额外手动分包
   },
