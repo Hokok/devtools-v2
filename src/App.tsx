@@ -6,6 +6,7 @@ import { TabBar } from "./components/TabBar";
 import { ToolHost } from "./components/ToolHost";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { CommandPalette } from "./components/CommandPalette";
+import { GlobalSettingsDialog } from "./components/GlobalSettingsDialog";
 import { useSettings } from "./platform/stores/settings";
 import { useTabs } from "./platform/stores/tabs";
 import { useUi } from "./platform/stores/ui";
@@ -29,6 +30,7 @@ export default function App() {
       </main>
       <SettingsPanel />
       <CommandPalette />
+      <GlobalSettingsDialog />
       <ConfirmExitDialog />
     </div>
   );
@@ -42,7 +44,7 @@ function useAppBootstrap() {
   }, []);
 }
 
-/** 全局快捷键：⌘K 命令面板 / Ctrl+W 关 Tab（macOS 走原生菜单）/ Ctrl+Tab 切换 / ⌘1-9 直达 / Esc 收设置面板 */
+/** 全局快捷键：⌘K 命令面板 / ⌘, 全局设置（macOS 走原生菜单）/ Ctrl+W 关 Tab（macOS 走原生菜单）/ Ctrl+Tab 切换 / ⌘1-9 直达 / Esc 收设置面板 */
 function useGlobalShortcuts() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -56,6 +58,13 @@ function useGlobalShortcuts() {
       if (mod && e.key.toLowerCase() === "k") {
         e.preventDefault();
         ui.setPaletteOpen(!ui.paletteOpen);
+        return;
+      }
+      if (mod && e.key === ",") {
+        // macOS 桌面端由原生菜单「设置…」处理（发 open-global-settings 事件），避免双触发
+        if (isMac && isTauri) return;
+        e.preventDefault();
+        ui.setGlobalSettingsOpen(true);
         return;
       }
       // 命令面板打开时，其余快捷键交给面板自己处理
@@ -100,6 +109,10 @@ function useWindowLifecycle() {
     void win.listen<null>("close-active-tab", () => {
       const tabs = useTabs.getState();
       if (tabs.activeId) tabs.closeTab(tabs.activeId);
+    }).then((fn) => unlisteners.push(fn));
+
+    void win.listen<null>("open-global-settings", () => {
+      useUi.setState({ globalSettingsOpen: true });
     }).then((fn) => unlisteners.push(fn));
 
     void win.onCloseRequested((event) => {

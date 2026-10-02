@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CornerDownLeft, Search } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { Columns2, CornerDownLeft, Search, Settings, SunMoon } from "lucide-react";
 import { fuzzyScore } from "../platform/fuzzy";
 import { registry } from "../platform/registry";
 import { TOOL_GROUPS } from "../platform/types";
@@ -8,7 +9,48 @@ import { useUi } from "../platform/stores/ui";
 
 const groupName = (id: string) => TOOL_GROUPS.find((g) => g.id === id)?.name ?? "";
 
-/** 命令面板：Ctrl/Cmd+K 直达工具，基于注册表元信息模糊检索。 */
+/** 面板可直达的全局命令（action），与工具检索混排、同一套模糊打分。 */
+interface PaletteAction {
+  id: string;
+  name: string;
+  description: string;
+  keywords: string[];
+  icon: LucideIcon;
+  run: () => void;
+}
+
+const ACTIONS: PaletteAction[] = [
+  {
+    id: "open-global-settings",
+    name: "打开全局设置",
+    description: "外观模式与工作区布局方向",
+    keywords: ["设置", "偏好", "主题", "外观", "布局", "settings"],
+    icon: Settings,
+    run: () => useUi.getState().setGlobalSettingsOpen(true),
+  },
+  {
+    id: "toggle-theme",
+    name: "切换深浅主题",
+    description: "在深色与浅色外观之间切换",
+    keywords: ["深色", "浅色", "暗色", "亮色", "主题", "theme"],
+    icon: SunMoon,
+    run: () => useUi.getState().toggleTheme(),
+  },
+  {
+    id: "toggle-layout-direction",
+    name: "切换布局方向",
+    description: "输入/输出区在上下分栏与左右分栏间互换",
+    keywords: ["布局", "分栏", "方向", "layout"],
+    icon: Columns2,
+    run: () => useUi.getState().toggleLayoutDirection(),
+  },
+];
+
+type Entry =
+  | { kind: "tool"; score: number; tool: (typeof registry)[number] }
+  | { kind: "action"; score: number; action: PaletteAction };
+
+/** 命令面板：Ctrl/Cmd+K 直达工具与全局命令，基于元信息模糊检索。 */
 export function CommandPalette() {
   const open = useUi((s) => s.paletteOpen);
   const setOpen = useUi((s) => s.setPaletteOpen);
@@ -17,20 +59,27 @@ export function CommandPalette() {
   const [cursor, setCursor] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const results = useMemo(() => {
-    const scored = registry
-      .map((tool) => {
-        const scores = [
-          fuzzyScore(query, tool.meta.name) ?? -Infinity,
-          ...(tool.meta.keywords ?? []).map((k) => (fuzzyScore(query, k) ?? -Infinity) * 0.92),
-          (fuzzyScore(query, tool.meta.id) ?? -Infinity) * 0.8,
-        ];
-        return { tool, score: Math.max(...scores) };
-      })
+  const results = useMemo<Entry[]>(() => {
+    const toolEntries: Entry[] = registry.map((tool) => {
+      const scores = [
+        fuzzyScore(query, tool.meta.name) ?? -Infinity,
+        ...(tool.meta.keywords ?? []).map((k) => (fuzzyScore(query, k) ?? -Infinity) * 0.92),
+        (fuzzyScore(query, tool.meta.id) ?? -Infinity) * 0.8,
+      ];
+      return { kind: "tool", tool, score: Math.max(...scores) };
+    });
+    const actionEntries: Entry[] = ACTIONS.map((action) => {
+      const scores = [
+        fuzzyScore(query, action.name) ?? -Infinity,
+        ...action.keywords.map((k) => (fuzzyScore(query, k) ?? -Infinity) * 0.92),
+        (fuzzyScore(query, action.id) ?? -Infinity) * 0.8,
+      ];
+      return { kind: "action", action, score: Math.max(...scores) };
+    });
+    return [...toolEntries, ...actionEntries]
       .filter((r) => r.score > -Infinity)
       .sort((a, b) => b.score - a.score)
       .slice(0, 12);
-    return scored.map((r) => r.tool);
   }, [query]);
 
   useEffect(() => {
@@ -44,11 +93,14 @@ export function CommandPalette() {
   if (!open) return null;
 
   const commit = (index: number) => {
-    const tool = results[index];
-    if (tool) {
-      openTool(tool.meta.id);
-      setOpen(false);
+    const entry = results[index];
+    if (!entry) return;
+    if (entry.kind === "tool") {
+      openTool(entry.tool.meta.id);
+    } else {
+      entry.action.run();
     }
+    setOpen(false);
   };
 
   return (
@@ -86,7 +138,7 @@ export function CommandPalette() {
               setQuery(e.target.value);
               setCursor(0);
             }}
-            placeholder="搜索工具…"
+            placeholder="搜索工具或命令…"
             className="h-12 w-full bg-transparent text-sm text-text outline-none placeholder:text-faint"
           />
           <span className="kbd shrink-0">ESC</span>
@@ -94,13 +146,19 @@ export function CommandPalette() {
 
         <ul className="max-h-80 overflow-y-auto p-1.5">
           {results.length === 0 && (
-            <li className="px-3 py-6 text-center text-xs text-faint">没有匹配的工具</li>
+            <li className="px-3 py-6 text-center text-xs text-faint">没有匹配的工具或命令</li>
           )}
-          {results.map((tool, i) => {
-            const Icon = tool.meta.icon;
+          {results.map((entry, i) => {
+            const icon = entry.kind === "tool" ? entry.tool.meta.icon : entry.action.icon;
+            const name = entry.kind === "tool" ? entry.tool.meta.name : entry.action.name;
+            const description =
+              entry.kind === "tool" ? entry.tool.meta.description : entry.action.description;
+            const tag = entry.kind === "tool" ? groupName(entry.tool.meta.group) : "命令";
+            const key = entry.kind === "tool" ? entry.tool.meta.id : entry.action.id;
+            const Icon = icon;
             const selected = i === cursor;
             return (
-              <li key={tool.meta.id}>
+              <li key={key}>
                 <button
                   onMouseEnter={() => setCursor(i)}
                   onClick={() => commit(i)}
@@ -112,11 +170,11 @@ export function CommandPalette() {
                   <Icon size={16} className={selected ? "text-accent" : "text-faint"} />
                   <span className="min-w-0 flex-1">
                     <span className={`block truncate text-xs ${selected ? "text-text" : "text-muted"}`}>
-                      {tool.meta.name}
+                      {name}
                     </span>
-                    <span className="block truncate text-[10px] text-faint">{tool.meta.description}</span>
+                    <span className="block truncate text-[10px] text-faint">{description}</span>
                   </span>
-                  <span className="shrink-0 text-[10px] text-faint">{groupName(tool.meta.group)}</span>
+                  <span className="shrink-0 text-[10px] text-faint">{tag}</span>
                   {selected && <CornerDownLeft size={12} className="shrink-0 text-accent" />}
                 </button>
               </li>

@@ -37,8 +37,13 @@ pub fn run() {
             // macOS 必须有应用子菜单，⌘Q/隐藏等系统角色才可用
             #[cfg(target_os = "macos")]
             {
+                let prefs = MenuItemBuilder::with_id("open-global-settings", "设置…")
+                    .accelerator("CmdOrCtrl+,")
+                    .build(app)?;
                 let app_menu = SubmenuBuilder::new(app, "DevTools")
                     .about(None)
+                    .separator()
+                    .item(&prefs)
                     .separator()
                     .hide()
                     .hide_others()
@@ -55,6 +60,11 @@ pub fn run() {
             if event.id().0 == "close-active-tab" {
                 if let Some(win) = app.get_webview_window("main") {
                     let _ = win.emit("close-active-tab", ());
+                }
+            }
+            if event.id().0 == "open-global-settings" {
+                if let Some(win) = app.get_webview_window("main") {
+                    let _ = win.emit("open-global-settings", ());
                 }
             }
         })

@@ -1,4 +1,4 @@
-import { ChevronsLeft, ChevronsRight, Moon, Search, Sun } from "lucide-react";
+import { ChevronsLeft, ChevronsRight, Moon, Search, Settings, Sun } from "lucide-react";
 import { registry } from "../platform/registry";
 import { TOOL_GROUPS } from "../platform/types";
 import { useTabs } from "../platform/stores/tabs";
@@ -12,6 +12,7 @@ export function SideNav() {
   const theme = useUi((s) => s.theme);
   const toggleTheme = useUi((s) => s.toggleTheme);
   const setPaletteOpen = useUi((s) => s.setPaletteOpen);
+  const setGlobalSettingsOpen = useUi((s) => s.setGlobalSettingsOpen);
   const tabs = useTabs((s) => s.tabs);
   const activeId = useTabs((s) => s.activeId);
   const openTool = useTabs((s) => s.openTool);
@@ -90,6 +91,13 @@ export function SideNav() {
           onClick={() => setPaletteOpen(true)}
         >
           <Search size={14} />
+        </button>
+        <button
+          className="icon-btn h-7 w-7"
+          title="全局设置 (Ctrl/Cmd+,)"
+          onClick={() => setGlobalSettingsOpen(true)}
+        >
+          <Settings size={14} />
         </button>
         <button
           className="icon-btn h-7 w-7"

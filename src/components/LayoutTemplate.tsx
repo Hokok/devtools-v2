@@ -41,11 +41,13 @@ export function LayoutTemplate({ tool, input, onInput, settings }: LayoutTemplat
   const feedbackTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const inputViewRef = useRef<EditorView | null>(null);
 
-  // 分栏：比例按工具持久化，拖拽中直接改 store（clamp 在 store 内做）
+  // 分栏：比例按工具持久化，拖拽中直接改 store（clamp 在 store 内做）；
+  // 方向全局统一（vertical 上下 | horizontal 左右），同一比例两种方向共用
   const ratio = useUi((s) => s.splitRatios[tool.id] ?? 0.5);
   const setSplitRatio = useUi((s) => s.setSplitRatio);
+  const horizontal = useUi((s) => s.layoutDirection === "horizontal");
   const containerRef = useRef<HTMLDivElement>(null);
-  const dragState = useRef<{ startY: number; startRatio: number; height: number } | null>(null);
+  const dragState = useRef<{ start: number; startRatio: number; size: number } | null>(null);
 
   useEffect(() => () => {
     clearTimeout(copiedTimer.current);
@@ -90,8 +92,11 @@ export function LayoutTemplate({ tool, input, onInput, settings }: LayoutTemplat
   }, [onInput, flash]);
 
   return (
-    <div ref={containerRef} className="flex h-full min-h-0 flex-col gap-1 p-3">
-      <div className="flex min-h-0 flex-col" style={{ height: `${ratio * 100}%` }}>
+    <div ref={containerRef} className={`flex h-full min-h-0 gap-1 p-3 ${horizontal ? "flex-row" : "flex-col"}`}>
+      <div
+        className="flex min-h-0 min-w-0"
+        style={horizontal ? { width: `${ratio * 100}%` } : { height: `${ratio * 100}%` }}
+      >
         <Card
           label="输入"
           meta={inputMeta}
@@ -149,16 +154,20 @@ export function LayoutTemplate({ tool, input, onInput, settings }: LayoutTemplat
         </Card>
       </div>
 
-      {/* 可拖拽分隔条：拖动调整比例，双击复位 */}
+      {/* 可拖拽分隔条：拖动调整比例，双击复位；方向随布局方向互换 */}
       <div
         role="separator"
-        aria-orientation="horizontal"
+        aria-orientation={horizontal ? "vertical" : "horizontal"}
         title="拖动调整分栏 · 双击复位"
-        className="group relative h-3 shrink-0 cursor-row-resize touch-none"
+        className={`group relative shrink-0 touch-none ${horizontal ? "w-3 cursor-col-resize" : "h-3 cursor-row-resize"}`}
         onPointerDown={(e) => {
           const rect = containerRef.current?.getBoundingClientRect();
           if (!rect) return;
-          dragState.current = { startY: e.clientY, startRatio: ratio, height: rect.height };
+          dragState.current = {
+            start: horizontal ? e.clientX : e.clientY,
+            startRatio: ratio,
+            size: horizontal ? rect.width : rect.height,
+          };
           try {
             e.currentTarget.setPointerCapture(e.pointerId);
           } catch {
@@ -168,7 +177,8 @@ export function LayoutTemplate({ tool, input, onInput, settings }: LayoutTemplat
         onPointerMove={(e) => {
           const d = dragState.current;
           if (!d) return;
-          setSplitRatio(tool.id, d.startRatio + (e.clientY - d.startY) / d.height);
+          const pos = horizontal ? e.clientX : e.clientY;
+          setSplitRatio(tool.id, d.startRatio + (pos - d.start) / d.size);
         }}
         onPointerUp={(e) => {
           dragState.current = null;
@@ -180,11 +190,20 @@ export function LayoutTemplate({ tool, input, onInput, settings }: LayoutTemplat
         }}
         onDoubleClick={() => setSplitRatio(tool.id, 0.5)}
       >
-        <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-line transition-colors group-hover:bg-accent-dim" />
-        <div className="absolute inset-x-1/2 top-1/2 h-[3px] w-10 -translate-x-1/2 -translate-y-1/2 rounded-full bg-line transition-colors group-hover:bg-accent/60" />
+        {horizontal ? (
+          <>
+            <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-line transition-colors group-hover:bg-accent-dim" />
+            <div className="absolute left-1/2 top-1/2 h-10 w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-line transition-colors group-hover:bg-accent/60" />
+          </>
+        ) : (
+          <>
+            <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-line transition-colors group-hover:bg-accent-dim" />
+            <div className="absolute inset-x-1/2 top-1/2 h-[3px] w-10 -translate-x-1/2 -translate-y-1/2 rounded-full bg-line transition-colors group-hover:bg-accent/60" />
+          </>
+        )}
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col">
+      <div className={`flex min-h-0 min-w-0 flex-1 ${horizontal ? "flex-row" : "flex-col"}`}>
         <Card
           label="输出"
           meta={
