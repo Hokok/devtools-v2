@@ -1,0 +1,43 @@
+name: CI
+
+# PR / 主干推送：前端单测 + 类型检查 + 构建 + Rust 编译检查（双平台）
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Frontend (test + typecheck + build)
+        run: |
+          pnpm test
+          pnpm build
+
+      - name: Rust check
+        run: cargo check
+        working-directory: src-tauri

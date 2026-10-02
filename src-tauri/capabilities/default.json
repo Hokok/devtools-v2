@@ -1,0 +1,12 @@
+{
+  "identifier": "default",
+  "description": "工作台主窗口默认能力",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "core:window:allow-destroy",
+    "store:default",
+    "clipboard-manager:allow-write-text",
+    "clipboard-manager:allow-read-text"
+  ]
+}

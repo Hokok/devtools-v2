@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DevTools</title>
+    <style>
+      /* 首帧防闪：与 index.css 的主题色保持一致 */
+      html { background: #0d1117; }
+      html[data-theme="light"] { background: #f6f8fa; }
+    </style>
+    <script>
+      // 首帧主题预置（Tauri 的 store 在 Rust 侧，这里镜像一份到 localStorage 供首帧读取）
+      try {
+        var t = JSON.parse(localStorage.getItem("ui.theme"));
+        var theme = t === "light" || t === "dark" ? t : (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+        if (theme === "light") document.documentElement.dataset.theme = "light";
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

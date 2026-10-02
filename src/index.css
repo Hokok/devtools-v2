@@ -1,0 +1,157 @@
+@import "tailwindcss";
+
+/* ————— 品牌字体：IBM Plex Mono（latin 子集 ~30KB，中文回退系统苹方/雅黑）————— */
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/plex-mono-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("./fonts/plex-mono-500.woff2") format("woff2");
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("./fonts/plex-mono-600.woff2") format("woff2");
+}
+
+/* ————— 设计令牌：GitHub Primer 配色（dark #0d1117 系 / light #f6f8fa 系）————— */
+:root {
+  --bg: #0d1117;          /* canvas-default */
+  --panel: #161b22;       /* canvas-subtle / overlay */
+  --raise: #21262d;       /* 按钮/输入底 */
+  --hover: #29303a;       /* neutral hover */
+  --active: rgba(56, 139, 253, 0.15); /* accent-muted，选中态 */
+  --line: #30363d;        /* border-default */
+  --line-strong: #3d444d; /* border-strong */
+  --text: #e6edf3;        /* fg-default */
+  --muted: #8d96a0;       /* fg-muted */
+  --faint: #6e7681;       /* fg-subtle */
+  --accent: #4493f8;      /* accent-fg */
+  --accent-dim: #1f6feb;  /* accent-emphasis */
+  --ok: #3fb950;
+  --danger: #f85149;
+  --warn: #d29922;
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  --bg: #f6f8fa;          /* canvas-subtle */
+  --panel: #ffffff;       /* canvas-default */
+  --raise: #f6f8fa;
+  --hover: #eef1f4;
+  --active: #ddf4ff;      /* accent-subtle */
+  --line: #d1d9de;
+  --line-strong: #afb8c1;
+  --text: #1f2328;
+  --muted: #59636e;
+  --faint: #6e7781;
+  --accent: #0969da;
+  --accent-dim: #0550ae;
+  --ok: #1a7f37;
+  --danger: #cf222e;
+  --warn: #9a6700;
+  color-scheme: light;
+}
+
+/* Tailwind 4：工具类直接引用运行时变量，主题切换零重排成本 */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-raise: var(--raise);
+  --color-hover: var(--hover);
+  --color-active: var(--active);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-accent: var(--accent);
+  --color-accent-dim: var(--accent-dim);
+  --color-ok: var(--ok);
+  --color-danger: var(--danger);
+  --color-warn: var(--warn);
+
+  --font-ui:
+    "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", monospace;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply overflow-hidden bg-bg font-ui text-[13px] text-text antialiased;
+    font-variant-numeric: tabular-nums;
+    /* 工作台界面整体禁止文本选择（修复 Ctrl/Cmd+A 全选整个应用）；
+       编辑器与输入框在下方单独恢复 */
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  input,
+  textarea,
+  [contenteditable] {
+    user-select: text;
+    -webkit-user-select: text;
+  }
+
+  /* GitHub 风格是纯平配色：无渐晕、无噪点氛围层 */
+
+  ::selection {
+    background: color-mix(in oklab, var(--accent) 30%, transparent);
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line-strong) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-line-strong);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  :focus-visible {
+    outline: 1px solid color-mix(in oklab, var(--accent) 70%, transparent);
+    outline-offset: 1px;
+  }
+}
+
+@layer components {
+  .kbd {
+    @apply inline-block rounded border border-line bg-raise px-1.5 py-px text-[10px] leading-4 text-muted;
+  }
+
+  .icon-btn {
+    @apply flex h-6 w-6 shrink-0 items-center justify-center rounded text-faint transition-colors;
+  }
+  .icon-btn:hover:not(:disabled) {
+    @apply bg-hover text-text;
+  }
+  .icon-btn:disabled {
+    @apply cursor-not-allowed opacity-35;
+  }
+
+  .field-label {
+    @apply mb-1.5 block text-[11px] text-muted;
+  }
+}

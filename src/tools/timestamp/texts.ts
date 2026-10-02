@@ -1,0 +1,20 @@
+export const texts = {
+  name: "时间戳转换",
+  description: "Unix 时间戳与人类时间互转",
+  keywords: ["timestamp", "时间戳", "unix", "日期", "date", "epoch", "sj", "sjz"],
+  labels: {
+    sec: "Unix 秒",
+    ms: "Unix 毫秒",
+    iso: "ISO 8601",
+    local: "本地时间",
+    weekday: "星期",
+    relative: "相对",
+    now: "刚刚",
+    ago: "前",
+    later: "后",
+    minutes: "分钟",
+    hours: "小时",
+    days: "天",
+    weekdays: ["周日", "周一", "周二", "周三", "周四", "周五", "周六"],
+  },
+};
