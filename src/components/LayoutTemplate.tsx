@@ -45,9 +45,11 @@ export function LayoutTemplate({ tool, input, onInput, settings }: LayoutTemplat
   // 方向全局统一（vertical 上下 | horizontal 左右），同一比例两种方向共用
   const ratio = useUi((s) => s.splitRatios[tool.id] ?? 0.5);
   const setSplitRatio = useUi((s) => s.setSplitRatio);
+  const commitSplitRatio = useUi((s) => s.commitSplitRatio);
   const horizontal = useUi((s) => s.layoutDirection === "horizontal");
   const containerRef = useRef<HTMLDivElement>(null);
   const dragState = useRef<{ start: number; startRatio: number; size: number } | null>(null);
+  const [dragging, setDragging] = useState(false);
 
   useEffect(() => () => {
     clearTimeout(copiedTimer.current);
@@ -92,7 +94,7 @@ export function LayoutTemplate({ tool, input, onInput, settings }: LayoutTemplat
   }, [onInput, flash]);
 
   return (
-    <div ref={containerRef} className={`flex h-full min-h-0 gap-0.5 p-1 ${horizontal ? "flex-row" : "flex-col"}`}>
+    <div ref={containerRef} className={`flex h-full min-h-0 p-2 ${horizontal ? "flex-row" : "flex-col"}`}>
       <div
         className="flex min-h-0 min-w-0"
         style={horizontal ? { width: `${ratio * 100}%` } : { height: `${ratio * 100}%` }}
@@ -159,7 +161,7 @@ export function LayoutTemplate({ tool, input, onInput, settings }: LayoutTemplat
         role="separator"
         aria-orientation={horizontal ? "vertical" : "horizontal"}
         title="拖动调整分栏 · 双击复位"
-        className={`group relative shrink-0 touch-none ${horizontal ? "w-3 cursor-col-resize" : "h-3 cursor-row-resize"}`}
+        className={`group relative shrink-0 touch-none ${horizontal ? "w-4 cursor-col-resize" : "h-4 cursor-row-resize"}`}
         onPointerDown={(e) => {
           const rect = containerRef.current?.getBoundingClientRect();
           if (!rect) return;
@@ -168,6 +170,7 @@ export function LayoutTemplate({ tool, input, onInput, settings }: LayoutTemplat
             startRatio: ratio,
             size: horizontal ? rect.width : rect.height,
           };
+          setDragging(true);
           try {
             e.currentTarget.setPointerCapture(e.pointerId);
           } catch {
@@ -182,23 +185,36 @@ export function LayoutTemplate({ tool, input, onInput, settings }: LayoutTemplat
         }}
         onPointerUp={(e) => {
           dragState.current = null;
+          setDragging(false);
+          commitSplitRatio();
           try {
             e.currentTarget.releasePointerCapture(e.pointerId);
           } catch {
             /* 同上 */
           }
         }}
-        onDoubleClick={() => setSplitRatio(tool.id, 0.5)}
+        onDoubleClick={() => {
+          setSplitRatio(tool.id, 0.5);
+          commitSplitRatio();
+        }}
       >
         {horizontal ? (
           <>
-            <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-line transition-colors group-hover:bg-accent-dim" />
-            <div className="absolute left-1/2 top-1/2 h-10 w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-line transition-colors group-hover:bg-accent/60" />
+            <div
+              className={`absolute inset-y-0 left-1/2 w-px -translate-x-1/2 transition-colors ${dragging ? "bg-accent" : "bg-line/70 group-hover:bg-accent-dim"}`}
+            />
+            <div
+              className={`absolute left-1/2 top-1/2 h-10 w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full transition-colors ${dragging ? "bg-accent" : "bg-line/70 group-hover:bg-accent/60"}`}
+            />
           </>
         ) : (
           <>
-            <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-line transition-colors group-hover:bg-accent-dim" />
-            <div className="absolute inset-x-1/2 top-1/2 h-[3px] w-10 -translate-x-1/2 -translate-y-1/2 rounded-full bg-line transition-colors group-hover:bg-accent/60" />
+            <div
+              className={`absolute inset-x-0 top-1/2 h-px -translate-y-1/2 transition-colors ${dragging ? "bg-accent" : "bg-line/70 group-hover:bg-accent-dim"}`}
+            />
+            <div
+              className={`absolute inset-x-1/2 top-1/2 h-[3px] w-10 -translate-x-1/2 -translate-y-1/2 rounded-full transition-colors ${dragging ? "bg-accent" : "bg-line/70 group-hover:bg-accent/60"}`}
+            />
           </>
         )}
       </div>
@@ -233,7 +249,7 @@ export function LayoutTemplate({ tool, input, onInput, settings }: LayoutTemplat
           }
         >
           {result.error && (
-            <div className="mx-2 mt-1 flex items-start gap-2 rounded-md border border-danger/25 bg-danger/8 px-2.5 py-1.5 text-xs text-danger">
+            <div className="mx-3 mt-2 flex items-start gap-2 rounded-lg border border-danger/25 bg-danger/8 px-2.5 py-1.5 text-xs text-danger">
               <TriangleAlert size={13} className="mt-0.5 shrink-0" />
               <span className="break-all">
                 {result.error.message}
@@ -273,10 +289,10 @@ function Card({
   children: React.ReactNode;
 }) {
   return (
-    <section className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-lg border border-line bg-panel">
-      <header className="flex h-6 shrink-0 items-center gap-1.5 border-b border-line px-2">
-        <span className="text-[10px] font-medium tracking-[0.18em] text-faint uppercase">{label}</span>
-        <span className="truncate text-[10px] text-faint">{meta}</span>
+    <section className="card flex h-full min-h-0 w-full flex-col overflow-hidden">
+      <header className="flex h-8 shrink-0 items-center gap-2 px-3">
+        <span className="text-2xs font-medium tracking-[0.08em] text-muted uppercase">{label}</span>
+        <span className="truncate text-2xs text-faint">{meta}</span>
         <span className="ml-auto flex items-center gap-0.5">{actions}</span>
       </header>
       <div className="flex min-h-0 flex-1 flex-col">{children}</div>

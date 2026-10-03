@@ -43,28 +43,28 @@ export function RegexTester({ input, onInput, settings, onSettingsChange, sample
   );
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-2 p-1">
+    <div className="flex h-full min-h-0 flex-col gap-1 p-2">
       {/* 模式栏 */}
-      <div className="flex h-7 shrink-0 items-center gap-1.5 rounded-lg border border-line bg-panel px-2">
-        <span className="select-none text-sm text-accent">/</span>
+      <div className="card flex h-9 shrink-0 items-center gap-1.5 px-3">
+        <span className="select-none font-mono text-sm text-accent">/</span>
         <input
           value={pattern}
           onChange={(e) => onSettingsChange({ pattern: e.target.value })}
           placeholder="正则表达式，如 (?<user>\\w+)@"
           spellCheck={false}
-          className="min-w-0 flex-1 bg-transparent text-[13px] text-text outline-none placeholder:text-faint"
+          className="min-w-0 flex-1 bg-transparent font-mono text-sm text-text outline-none placeholder:text-faint"
         />
-        <span className="select-none text-sm text-accent">/{flags}</span>
-        <span className="mx-1 h-4 w-px bg-line" />
+        <span className="select-none font-mono text-sm text-accent">/{flags}</span>
+        <span className="mx-1 h-4 w-px bg-line/70" />
         {FLAG_ITEMS.map((f) => (
           <button
             key={f.flag}
             title={f.hint}
             onClick={() => toggleFlag(f.flag)}
-            className={`flex h-[22px] w-[22px] items-center justify-center rounded border text-[11px] transition-colors ${
+            className={`pressable flex h-6 w-6 items-center justify-center rounded-md font-mono text-2xs ${
               flags.includes(f.flag)
-                ? "border-accent-dim bg-accent/15 text-accent"
-                : "border-line bg-raise text-faint hover:text-muted"
+                ? "bg-active text-accent"
+                : "text-faint hover:bg-hover hover:text-muted"
             }`}
           >
             {f.flag}
@@ -73,7 +73,7 @@ export function RegexTester({ input, onInput, settings, onSettingsChange, sample
       </div>
 
       {error && (
-        <div className="flex shrink-0 items-center gap-2 rounded-md border border-danger/25 bg-danger/8 px-2.5 py-1.5 text-xs text-danger">
+        <div className="flex shrink-0 items-center gap-2 rounded-lg border border-danger/25 bg-danger/8 px-2.5 py-1.5 text-xs text-danger">
           <TriangleAlert size={13} className="shrink-0" />
           <span className="break-all">
             {error.startsWith("执行超过") ? error : `${T.invalid}：${error}`}
@@ -83,12 +83,12 @@ export function RegexTester({ input, onInput, settings, onSettingsChange, sample
 
       <div className="flex min-h-0 flex-1 gap-2">
         {/* 测试文本 */}
-        <section className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-lg border border-line bg-panel">
-          <header className="flex h-6 shrink-0 items-center gap-2 border-b border-line px-2">
-            <span className="text-[10px] font-medium tracking-[0.18em] text-faint uppercase">
+        <section className="card flex min-w-0 flex-1 flex-col overflow-hidden">
+          <header className="flex h-8 shrink-0 items-center gap-2 px-3">
+            <span className="text-2xs font-medium tracking-[0.08em] text-muted uppercase">
               测试文本
             </span>
-            <span className="ml-auto text-[10px] text-faint">{status}</span>
+            <span className="ml-auto text-2xs text-faint">{status}</span>
             <span className="flex items-center gap-0.5">
               {sample && (
                 <button className="icon-btn" title="载入示例" onClick={() => onInput(sample)}>
@@ -128,9 +128,9 @@ export function RegexTester({ input, onInput, settings, onSettingsChange, sample
 
 function MatchList({ matches }: { matches: RegexMatchInfo[] }) {
   return (
-    <section className="hidden w-[232px] shrink-0 flex-col overflow-hidden rounded-lg border border-line bg-panel md:flex">
-      <header className="flex h-6 shrink-0 items-center border-b border-line px-2">
-        <span className="text-[10px] font-medium tracking-[0.18em] text-faint uppercase">匹配</span>
+    <section className="card hidden w-[232px] shrink-0 flex-col overflow-hidden md:flex">
+      <header className="flex h-8 shrink-0 items-center px-3">
+        <span className="text-2xs font-medium tracking-[0.08em] text-muted uppercase">匹配</span>
       </header>
       <div className="min-h-0 flex-1 overflow-y-auto">
         {matches.length === 0 ? (
@@ -139,14 +139,14 @@ function MatchList({ matches }: { matches: RegexMatchInfo[] }) {
           matches.map((m, i) => (
             <div key={i} className="border-b border-line/60 px-2.5 py-1.5 text-xs">
               <div className="flex items-baseline gap-2">
-                <span className="text-[10px] text-faint">#{i + 1}</span>
+                <span className="text-2xs text-faint">#{i + 1}</span>
                 <span className="min-w-0 flex-1 truncate text-text">{m.text || "(空匹配)"}</span>
-                <span className="shrink-0 text-[10px] text-faint" title={T.index}>
+                <span className="shrink-0 text-2xs text-faint" title={T.index}>
                   @{m.index}
                 </span>
               </div>
               {(m.groups.length > 0 || (m.named && Object.keys(m.named).length > 0)) && (
-                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-muted">
+                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-2xs text-muted">
                   {m.groups.map((g, gi) => (
                     <span key={gi}>
                       ${gi + 1}: <span className="text-ok">{g ?? "—"}</span>

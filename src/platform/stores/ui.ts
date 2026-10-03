@@ -14,6 +14,15 @@ function applyTheme(theme: Theme) {
   } else {
     delete document.documentElement.dataset.theme;
   }
+  // 原生窗口外观同步：标题栏随主题变（修深色主题下标题栏发白），
+  // 窗口/WebView 底色同色（修最大化/重排瞬间露白底）
+  if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
+    void import("@tauri-apps/api/window").then(({ getCurrentWindow }) => {
+      const win = getCurrentWindow();
+      void win.setTheme(theme);
+      void win.setBackgroundColor(theme === "light" ? "#f6f8fa" : "#0d1117");
+    });
+  }
 }
 
 function systemTheme(): Theme {
@@ -67,6 +76,8 @@ interface UiState {
   setGlobalSettingsOpen: (open: boolean) => void;
   setPaletteOpen: (open: boolean) => void;
   setSplitRatio: (toolId: string, ratio: number) => void;
+  /** 拖拽结束时统一落盘（拖动过程只写内存，避免 pointermove 级 IPC 风暴） */
+  commitSplitRatio: () => void;
   hydrate: () => Promise<void>;
 }
 
@@ -123,6 +134,9 @@ export const useUi = create<UiState>((set, get) => ({
   setSplitRatio(toolId, ratio) {
     const clamped = Math.min(0.85, Math.max(0.15, ratio));
     set({ splitRatios: { ...get().splitRatios, [toolId]: clamped } });
+  },
+
+  commitSplitRatio() {
     void storage.set("ui.splitRatios", get().splitRatios);
   },
 

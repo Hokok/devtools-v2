@@ -21,7 +21,7 @@ export function TabBar() {
   };
 
   return (
-    <div className="flex h-7 shrink-0 items-center border-b border-line bg-bg pr-1.5 pl-1">
+    <div className="flex h-9 shrink-0 items-center bg-bg pr-2 pl-2">
       <div
         ref={scrollRef}
         className="scrollbar-none flex min-w-0 flex-1 items-center gap-1 overflow-x-auto"
@@ -49,10 +49,10 @@ export function TabBar() {
               }}
               title={tool?.meta.description}
               className={[
-                "group flex h-[22px] shrink-0 items-center gap-1 rounded-md border px-1.5 text-xs transition-colors",
+                "group flex h-[26px] shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-xs pressable",
                 active
-                  ? "border-line-strong bg-panel text-text"
-                  : "border-transparent text-muted hover:bg-hover hover:text-text",
+                  ? "bg-panel text-text shadow-[var(--card-shadow)]"
+                  : "text-muted hover:bg-hover hover:text-text",
               ].join(" ")}
             >
               {Icon && <Icon size={13} className={active ? "text-accent" : "text-faint"} />}

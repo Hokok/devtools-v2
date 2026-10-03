@@ -25,6 +25,9 @@
 
 /* ————— 设计令牌：GitHub Primer 配色（dark #0d1117 系 / light #f6f8fa 系）————— */
 :root {
+  /* 代码/等宽字体：编辑器、kbd、正则等「内容」场景；界面层用 --font-ui 的系统无衬线 */
+  --font-code: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas,
+    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", monospace;
   --bg: #0d1117;          /* canvas-default */
   --panel: #161b22;       /* canvas-subtle / overlay */
   --raise: #21262d;       /* 按钮/输入底 */
@@ -40,6 +43,11 @@
   --ok: #3fb950;
   --danger: #f85149;
   --warn: #d29922;
+  /* 表面分层：暗色用极淡描边 + 无投影（纯平），亮色用柔和投影分层 */
+  --card-border: rgba(240, 246, 252, 0.07);
+  --card-shadow: none;
+  --overlay: rgba(1, 4, 9, 0.62);
+  --shadow-dialog: 0 24px 70px rgba(1, 4, 9, 0.5), 0 4px 16px rgba(1, 4, 9, 0.25);
   color-scheme: dark;
 }
 
@@ -59,6 +67,10 @@
   --ok: #1a7f37;
   --danger: #cf222e;
   --warn: #9a6700;
+  --card-border: transparent;
+  --card-shadow: 0 1px 2px rgba(31, 35, 40, 0.05), 0 8px 24px rgba(31, 35, 40, 0.06);
+  --overlay: rgba(31, 35, 40, 0.42);
+  --shadow-dialog: 0 24px 70px rgba(31, 35, 40, 0.2), 0 8px 24px rgba(31, 35, 40, 0.1);
   color-scheme: light;
 }
 
@@ -79,10 +91,23 @@
   --color-ok: var(--ok);
   --color-danger: var(--danger);
   --color-warn: var(--warn);
+  --color-card-border: var(--card-border);
 
+  /* 界面字体：系统无衬线（macOS SF Pro + 苹方 / Windows Segoe UI + 雅黑），零打包原生感 */
   --font-ui:
-    "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "PingFang SC",
-    "Hiragino Sans GB", "Microsoft YaHei", monospace;
+    system-ui, -apple-system, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+    "Noto Sans CJK SC", sans-serif;
+  --font-mono: var(--font-code);
+
+  /* 字号五档 token（全应用只用这五档，禁止 11/15/12.5 等野值）：
+     2xs=10 微标签/提示 · xs=12 次要文字/标签 · sm=13 正文/输入/编辑器 ·
+     md=14 导航/设置面板文字 · base=16 对话框标题 */
+  --text-2xs: 0.625rem;
+  --text-2xs--line-height: 1.4;
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: 1.5;
+  --text-md: 0.875rem;
+  --text-md--line-height: 1.45;
 }
 
 @layer base {
@@ -93,7 +118,7 @@
   }
 
   body {
-    @apply overflow-hidden bg-bg font-ui text-[13px] text-text antialiased;
+    @apply overflow-hidden bg-bg font-ui text-sm text-text antialiased;
     font-variant-numeric: tabular-nums;
     /* 工作台界面整体禁止文本选择（修复 Ctrl/Cmd+A 全选整个应用）；
        编辑器与输入框在下方单独恢复 */
@@ -134,24 +159,89 @@
     outline: 1px solid color-mix(in oklab, var(--accent) 70%, transparent);
     outline-offset: 1px;
   }
+
+  /* 只读输出面板：隐藏光标（可聚焦可搜索，但看起来不像能输入） */
+  .read-only .cm-content {
+    caret-color: transparent;
+  }
+
+  /* 窗口缩放进行中：冻结所有过渡/动画，压缩逐帧重排成本 */
+  body.resizing *,
+  body.resizing *::before,
+  body.resizing *::after {
+    transition: none !important;
+    animation: none !important;
+  }
 }
 
 @layer components {
+  /* 浮在画布上的分层表面：所有卡片/弹窗/工具条的统一容器语言 */
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--card-border);
+    box-shadow: var(--card-shadow);
+    border-radius: 12px;
+  }
+
   .kbd {
-    @apply inline-block rounded border border-line bg-raise px-1.5 py-px text-[10px] leading-4 text-muted;
+    @apply inline-block rounded bg-raise px-1.5 py-px font-mono text-2xs leading-4 text-muted;
+    box-shadow: inset 0 -1px 0 var(--card-border);
   }
 
   .icon-btn {
-    @apply flex h-6 w-6 shrink-0 items-center justify-center rounded text-faint transition-colors;
+    @apply flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-faint;
+    transition:
+      color 100ms ease-out,
+      background-color 100ms ease-out,
+      transform 100ms ease-out;
   }
   .icon-btn:hover:not(:disabled) {
     @apply bg-hover text-text;
+  }
+  .icon-btn:active:not(:disabled) {
+    transform: scale(0.94);
   }
   .icon-btn:disabled {
     @apply cursor-not-allowed opacity-35;
   }
 
+  /* 紧凑按钮的按压反馈：颜色 + 轻缩放（全宽行类元素不用，行点击本身有选中态反馈） */
+  .pressable,
+  .btn {
+    transition:
+      color 100ms ease-out,
+      background-color 100ms ease-out,
+      border-color 100ms ease-out,
+      transform 100ms ease-out;
+  }
+  .pressable:active:not(:disabled),
+  .btn:active:not(:disabled) {
+    transform: scale(0.96);
+  }
+
+  /* 对话框按钮体系：每屏至多一个填色主按钮，其余安静 */
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-medium;
+  }
+  .btn-primary {
+    @apply bg-accent-dim text-white hover:brightness-110;
+  }
+  .btn-ghost {
+    @apply text-text hover:bg-hover;
+  }
+  .btn-danger {
+    @apply bg-danger text-white hover:brightness-110;
+  }
+
   .field-label {
-    @apply mb-1.5 block text-[11px] text-muted;
+    @apply mb-1.5 block text-md text-muted;
+  }
+}
+
+/* Tab 条等横向溢出区隐藏滚动条（滚轮已转横向滚动） */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
   }
 }

@@ -10,8 +10,8 @@ import { EditorView } from "@codemirror/view";
 
 const darkView = EditorView.theme(
   {
-    "&": { color: "#e6edf3", backgroundColor: "transparent", height: "100%", fontSize: "12.5px" },
-    ".cm-scroller": { fontFamily: "inherit", lineHeight: "1.5", padding: "3px 0 4px" },
+    "&": { color: "#e6edf3", backgroundColor: "transparent", height: "100%", fontSize: "13px" },
+    ".cm-scroller": { fontFamily: "var(--font-code)", lineHeight: "1.5", padding: "3px 0 4px" },
     ".cm-content": { caretColor: "#4493f8" },
     ".cm-cursor, .cm-dropCursor": { borderLeftColor: "#4493f8", borderLeftWidth: "2px" },
     "&.cm-focused": { outline: "none" },
@@ -38,9 +38,17 @@ const darkView = EditorView.theme(
       borderRadius: "6px",
       padding: "2px 6px",
       fontSize: "12px",
+      fontFamily: "var(--font-code)",
     },
     ".cm-tooltip": { backgroundColor: "#161b22", border: "1px solid #30363d", borderRadius: "6px" },
-    ".cm-foldGutter span": { color: "#6e7681", fontSize: "11px" },
+    // 折叠槽：整列加宽为可点条（折叠按整行槽位响应），字形 14px + 手型光标
+    ".cm-foldGutter .cm-gutterElement": {
+      minWidth: "20px",
+      paddingLeft: "2px",
+      paddingRight: "4px",
+      cursor: "pointer",
+    },
+    ".cm-foldGutter span": { color: "#6e7681", fontSize: "16px" },
     ".cm-foldGutter span:hover": { color: "#4493f8" },
   },
   { dark: true },
@@ -67,8 +75,8 @@ const darkHighlight = syntaxHighlighting(
 
 const lightView = EditorView.theme(
   {
-    "&": { color: "#1f2328", backgroundColor: "transparent", height: "100%", fontSize: "12.5px" },
-    ".cm-scroller": { fontFamily: "inherit", lineHeight: "1.5", padding: "3px 0 4px" },
+    "&": { color: "#1f2328", backgroundColor: "transparent", height: "100%", fontSize: "13px" },
+    ".cm-scroller": { fontFamily: "var(--font-code)", lineHeight: "1.5", padding: "3px 0 4px" },
     ".cm-content": { caretColor: "#0969da" },
     ".cm-cursor, .cm-dropCursor": { borderLeftColor: "#0969da", borderLeftWidth: "2px" },
     "&.cm-focused": { outline: "none" },
@@ -95,9 +103,17 @@ const lightView = EditorView.theme(
       borderRadius: "6px",
       padding: "2px 6px",
       fontSize: "12px",
+      fontFamily: "var(--font-code)",
     },
     ".cm-tooltip": { backgroundColor: "#ffffff", border: "1px solid #d1d9de", borderRadius: "6px" },
-    ".cm-foldGutter span": { color: "#818b98", fontSize: "11px" },
+    // 折叠槽：整列加宽为可点条（折叠按整行槽位响应），字形 14px + 手型光标
+    ".cm-foldGutter .cm-gutterElement": {
+      minWidth: "20px",
+      paddingLeft: "2px",
+      paddingRight: "4px",
+      cursor: "pointer",
+    },
+    ".cm-foldGutter span": { color: "#818b98", fontSize: "16px" },
     ".cm-foldGutter span:hover": { color: "#0969da" },
   },
   { dark: false },

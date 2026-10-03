@@ -19,6 +19,7 @@ export default function App() {
   useAppBootstrap();
   useGlobalShortcuts();
   useWindowLifecycle();
+  useResizeFreeze();
 
   return (
     <div className="relative z-10 flex h-full">
@@ -128,28 +129,40 @@ function useWindowLifecycle() {
   }, []);
 }
 
+/** 拖拽缩放进行中冻结所有过渡/动画：WKWebView 逐帧重排下，过渡只会放大「走位」感 */
+function useResizeFreeze() {
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const onResize = () => {
+      document.body.classList.add("resizing");
+      clearTimeout(timer);
+      timer = setTimeout(() => document.body.classList.remove("resizing"), 150);
+    };
+    window.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      clearTimeout(timer);
+      document.body.classList.remove("resizing");
+    };
+  }, []);
+}
+
 /** 退出确认：非空 Tab 存在时拦截关窗 */
 function ConfirmExitDialog() {
   const open = useUi((s) => s.exitConfirmOpen);
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 backdrop-blur-[2px]">
-      <div className="w-[360px] max-w-[90vw] rounded-xl border border-line-strong bg-panel p-4 shadow-[0_24px_80px_rgba(0,0,0,0.55)]">
-        <h2 className="text-sm font-medium text-text">确定退出 DevTools？</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay)] backdrop-blur-[3px]">
+      <div className="card w-[360px] max-w-[90vw] rounded-2xl p-5 shadow-[var(--shadow-dialog)]">
+        <h2 className="text-base font-semibold text-text">确定退出 DevTools？</h2>
         <p className="mt-2 text-xs leading-5 text-muted">
           有标签页包含未处理完的内容。应用不保存会话，退出后这些内容将丢失。
         </p>
-        <div className="mt-4 flex justify-end gap-2">
-          <button
-            onClick={() => useUi.setState({ exitConfirmOpen: false })}
-            className="rounded-md border border-line bg-raise px-3 py-1.5 text-xs text-text transition-colors hover:bg-hover"
-          >
+        <div className="mt-5 flex justify-end gap-2">
+          <button onClick={() => useUi.setState({ exitConfirmOpen: false })} className="btn btn-ghost">
             取消
           </button>
-          <button
-            onClick={() => void getCurrentWindow().destroy()}
-            className="rounded-md border border-danger/40 bg-danger/15 px-3 py-1.5 text-xs text-danger transition-colors hover:bg-danger/25"
-          >
+          <button onClick={() => void getCurrentWindow().destroy()} className="btn btn-danger">
             放弃内容并退出
           </button>
         </div>
@@ -166,7 +179,7 @@ function StatusBar() {
   const setPaletteOpen = useUi((s) => s.setPaletteOpen);
 
   return (
-    <footer className="flex h-5 shrink-0 items-center gap-3 border-t border-line bg-panel px-2 text-[10px] text-faint">
+    <footer className="flex h-6 shrink-0 items-center gap-3 px-3 text-2xs text-faint">
       <span className="text-accent/70">◆</span>
       <span>{activeToolId ? getTool(activeToolId)?.meta.name : "就绪"}</span>
       <span className="text-line-strong">|</span>

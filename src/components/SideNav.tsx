@@ -1,4 +1,4 @@
-import { ChevronsLeft, ChevronsRight, Settings } from "lucide-react";
+import { PanelLeftClose, Settings } from "lucide-react";
 import { registry } from "../platform/registry";
 import { TOOL_GROUPS } from "../platform/types";
 import { useTabs } from "../platform/stores/tabs";
@@ -18,40 +18,47 @@ export function SideNav() {
 
   return (
     <aside
-      className="z-10 flex shrink-0 flex-col border-r border-line bg-panel transition-[width] duration-200 ease-out"
-      style={{ width: collapsed ? 36 : 130 }}
+      className="z-10 flex shrink-0 flex-col transition-[width] duration-200 ease-out"
+      style={{ width: collapsed ? 36 : 140 }}
     >
-      {/* 品牌区 + 收缩开关（顶部，与右侧设置面板的开关位置对称） */}
-      <div className={`shrink-0 border-b border-line ${collapsed ? "flex flex-col items-center gap-1 py-1.5" : "flex h-8 items-center gap-1.5 pl-2 pr-1"}`}>
-        <div className={`flex items-center gap-1 ${collapsed ? "" : "min-w-0"}`}>
-          <LogoMark />
-          {!collapsed && (
-            <span className="truncate text-[11px] font-semibold tracking-[0.1em] text-text select-none">
-              DEVTOOLS
-            </span>
-          )}
+      {/* 品牌区 + 收缩开关（顶部，与右侧设置面板的开关位置对称）；
+          收起时品牌标识本身即展开按钮——窄条里第一个可点元素就是「展开」，不用找 */}
+      {collapsed ? (
+        <div className="flex shrink-0 flex-col items-center py-1.5">
+          <button
+            className="pressable flex h-8 w-8 items-center justify-center rounded-md hover:bg-hover"
+            title="展开菜单"
+            onClick={toggleNav}
+          >
+            <LogoMark />
+          </button>
         </div>
-        <button
-          className="icon-btn shrink-0"
-          title={collapsed ? "展开菜单" : "收缩菜单"}
-          onClick={toggleNav}
-        >
-          {collapsed ? <ChevronsRight size={14} /> : <ChevronsLeft size={14} />}
-        </button>
-      </div>
+      ) : (
+        <div className="flex h-10 shrink-0 items-center gap-2 pl-2.5 pr-1">
+          <div className="flex min-w-0 items-center gap-1.5">
+            <LogoMark />
+            <span className="truncate text-md font-semibold tracking-tight text-text select-none">
+              DevTools
+            </span>
+          </div>
+          <button className="icon-btn shrink-0" title="收缩菜单" onClick={toggleNav}>
+            <PanelLeftClose size={15} />
+          </button>
+        </div>
+      )}
 
-      <nav className="min-h-0 flex-1 overflow-y-auto py-1">
+      <nav className="min-h-0 flex-1 overflow-y-auto px-1.5 py-1">
         {TOOL_GROUPS.map((group) => {
           const tools = registry.filter((t) => t.meta.group === group.id);
           if (tools.length === 0) return null;
           return (
-            <div key={group.id} className="mb-1">
+            <div key={group.id} className="mb-1.5">
               {!collapsed && (
-                <div className="px-2 pt-1 pb-0.5 text-[10px] tracking-[0.16em] text-faint uppercase">
+                <div className="px-2 pt-1.5 pb-1 text-xs font-medium tracking-[0.08em] text-faint uppercase">
                   {group.name}
                 </div>
               )}
-              {collapsed && <div className="mx-2 my-1 border-t border-line" />}
+              {collapsed && <div className="mx-2 my-1.5 border-t border-line/60" />}
               {tools.map((tool) => {
                 const Icon = tool.meta.icon;
                 const active = tool.meta.id === activeToolId;
@@ -61,16 +68,13 @@ export function SideNav() {
                     title={collapsed ? tool.meta.name : undefined}
                     onClick={() => openTool(tool.meta.id)}
                     className={[
-                      "group relative flex h-[24px] w-full items-center gap-1.5 text-left text-xs transition-colors",
+                      "group flex h-7 w-full items-center gap-2 rounded-md text-left text-md transition-colors",
                       collapsed ? "justify-center" : "px-2",
                       active
                         ? "bg-active text-accent"
                         : "text-muted hover:bg-hover hover:text-text",
                     ].join(" ")}
                   >
-                    {active && (
-                      <span className="absolute top-1.5 bottom-1.5 left-0 w-[2px] rounded-r bg-accent" />
-                    )}
                     <Icon size={14} className={active ? "text-accent" : "text-faint group-hover:text-muted"} />
                     {!collapsed && <span className="truncate">{tool.meta.name}</span>}
                   </button>
@@ -82,7 +86,7 @@ export function SideNav() {
       </nav>
 
       {/* 底部只留全局设置入口（命令面板走 Ctrl/Cmd+K，主题切换在设置弹窗与命令面板） */}
-      <div className="flex shrink-0 items-center border-t border-line p-1">
+      <div className="flex shrink-0 items-center p-1.5">
         <button
           className="icon-btn"
           title="全局设置 (Ctrl/Cmd+,)"

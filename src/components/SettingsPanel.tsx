@@ -18,13 +18,13 @@ export function SettingsPanel() {
 
   return (
     <aside
-      className="z-10 shrink-0 overflow-hidden border-l border-line bg-panel transition-[width] duration-200 ease-out"
+      className="z-10 shrink-0 overflow-hidden transition-[width] duration-200 ease-out"
       style={{ width: open ? 192 : 0 }}
     >
-      <div className="flex h-full w-[192px] flex-col">
-        <header className="flex h-8 shrink-0 items-center gap-2 border-b border-line px-2">
-          <span className="text-[10px] font-medium tracking-[0.18em] text-faint uppercase">设置</span>
-          <span className="truncate text-xs text-text">{tool?.name ?? ""}</span>
+      <div className="flex h-full w-[192px] flex-col pt-1">
+        <header className="flex h-8 shrink-0 items-center gap-2 px-3">
+          <span className="text-xs font-medium tracking-[0.08em] text-faint uppercase">设置</span>
+          <span className="truncate text-md text-muted">{tool?.name ?? ""}</span>
           {tool?.settingsSchema && tool.settingsSchema.length > 0 && (
             <button className="icon-btn ml-auto" title="恢复默认" onClick={reset}>
               <RotateCcw size={13} />
@@ -32,11 +32,11 @@ export function SettingsPanel() {
           )}
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-2">
+        <div className="min-h-0 flex-1 overflow-y-auto px-2.5 pt-1 pb-2">
           {!tool ? (
-            <p className="text-xs leading-5 text-faint">激活一个工具后，可在此配置它的选项。</p>
+            <p className="text-md leading-5 text-faint">激活一个工具后，可在此配置它的选项。</p>
           ) : !tool.settingsSchema || tool.settingsSchema.length === 0 ? (
-            <p className="text-xs leading-5 text-faint">该工具没有可配置项。</p>
+            <p className="text-md leading-5 text-faint">该工具没有可配置项。</p>
           ) : (
             tool.settingsSchema.map((field) =>
               field.type === "divider" ? (
@@ -79,17 +79,17 @@ function FieldControl({
         onClick={() => onChange(!checked)}
       >
         <span>
-          <span className="block text-xs text-text">{field.label}</span>
-          {field.hint && <span className="mt-0.5 block text-[10px] leading-4 text-faint">{field.hint}</span>}
+          <span className="block text-md text-text">{field.label}</span>
+          {field.hint && <span className="mt-0.5 block text-xs leading-4 text-faint">{field.hint}</span>}
         </span>
         <button
           role="switch"
           aria-checked={checked}
           aria-label={field.label}
-          className={`mt-0.5 h-[16px] w-7 shrink-0 rounded-full border transition-colors ${checked ? "border-accent-dim bg-accent/25" : "border-line-strong bg-raise"}`}
+          className={`mt-0.5 h-[18px] w-8 shrink-0 rounded-full transition-colors ${checked ? "bg-accent" : "border border-line-strong bg-raise"}`}
         >
           <span
-            className={`pointer-events-none block h-[10px] w-[10px] rounded-full transition-all ${checked ? "ml-[14px] bg-accent shadow-[0_0_6px_rgba(79,216,232,0.6)]" : "ml-[3px] bg-faint"}`}
+            className={`pointer-events-none block h-3 w-3 rounded-full transition-all ${checked ? "ml-[17px] bg-white" : "ml-[3px] bg-faint"}`}
           />
         </button>
       </div>
@@ -103,7 +103,7 @@ function FieldControl({
         <select
           value={String(settings[field.key] ?? field.default)}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full appearance-none rounded-md border border-line bg-raise px-2 py-1 text-xs text-text transition-colors hover:border-line-strong"
+          className="w-full appearance-none rounded-lg border border-line/70 bg-raise px-2 py-1 text-md text-text transition-colors outline-none hover:border-line-strong focus:border-accent"
         >
           {field.options.map((o) => (
             <option key={o.value} value={o.value}>
@@ -126,7 +126,7 @@ function FieldControl({
           max={field.max}
           step={field.step}
           onChange={(e) => onChange(Number(e.target.value))}
-          className="w-full rounded-md border border-line bg-raise px-2 py-1 text-xs text-text transition-colors hover:border-line-strong"
+          className="w-full rounded-lg border border-line/70 bg-raise px-2 py-1 text-md text-text transition-colors outline-none hover:border-line-strong focus:border-accent"
         />
       </div>
     );
@@ -140,7 +140,7 @@ function FieldControl({
         value={String(settings[field.key] ?? field.default)}
         placeholder={field.placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-md border border-line bg-raise px-2 py-1 text-xs text-text transition-colors hover:border-line-strong"
+        className="w-full rounded-lg border border-line/70 bg-raise px-2 py-1 text-md text-text transition-colors outline-none hover:border-line-strong focus:border-accent"
       />
     </div>
   );
@@ -150,7 +150,7 @@ function DividerField({ field }: { field: Extract<SettingField, { type: "divider
   if (!field.label) return <hr className="my-2 border-line" />;
   return (
     <div className="my-2 flex items-center gap-2">
-      <span className="text-[10px] tracking-[0.14em] text-faint uppercase">{field.label}</span>
+      <span className="text-xs tracking-[0.14em] text-faint uppercase">{field.label}</span>
       <hr className="flex-1 border-line" />
     </div>
   );

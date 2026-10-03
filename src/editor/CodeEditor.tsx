@@ -72,7 +72,9 @@ export function CodeEditor({
         EditorView.lineWrapping,
         readOnlyComp.current.of([
           EditorState.readOnly.of(readOnly ?? false),
-          EditorView.editable.of(!readOnly),
+          // 只锁编辑不锁交互：输出面板保持可聚焦/可选中，⌘F 搜索、折叠、⌘C 复制选中都照常可用
+          // （editable:false 会让点击不聚焦、键盘事件进不来，搜索永远打不开）
+          EditorView.editable.of(true),
         ]),
         langComp.current.of([]),
         cmPlaceholder(placeholder ?? ""),
@@ -125,7 +127,7 @@ export function CodeEditor({
     viewRef.current?.dispatch({
       effects: readOnlyComp.current.reconfigure([
         EditorState.readOnly.of(readOnly ?? false),
-        EditorView.editable.of(!readOnly),
+        EditorView.editable.of(true),
       ]),
     });
   }, [readOnly]);
@@ -146,5 +148,5 @@ export function CodeEditor({
     };
   }, [language]);
 
-  return <div ref={hostRef} className="h-full min-h-0 overflow-hidden" />;
+  return <div ref={hostRef} className={`h-full min-h-0 overflow-hidden ${readOnly ? "read-only" : ""}`} />;
 }

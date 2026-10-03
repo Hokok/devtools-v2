@@ -13,25 +13,25 @@ export function EmptyState() {
     .filter((t) => t !== undefined);
 
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-4">
-      <div className="flex flex-col items-center gap-3">
-        <LogoMark size={40} />
+    <div className="flex h-full flex-col items-center justify-center gap-7">
+      <div className="flex flex-col items-center gap-4">
+        <LogoMark size={44} />
         <div className="text-center">
-          <div className="text-sm font-medium tracking-[0.3em] text-text">DEVTOOLS</div>
-          <div className="mt-1.5 text-xs text-faint">开发者的随身工作台 · 打开即用，用完即走</div>
+          <div className="text-lg font-semibold tracking-[0.3em] text-text">DEVTOOLS</div>
+          <div className="mt-2 text-sm text-faint">开发者的随身工作台 · 打开即用，用完即走</div>
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2.5">
         {quick.map((tool) => {
           const Icon = tool.meta.icon;
           return (
             <button
               key={tool.meta.id}
               onClick={() => openTool(tool.meta.id)}
-              className="flex items-center gap-1.5 rounded-md border border-line bg-panel px-3 py-1.5 text-xs text-muted transition-colors hover:border-accent-dim hover:text-accent"
+              className="pressable flex items-center gap-2 rounded-full border border-card-border bg-panel py-2 pr-4 pl-3.5 text-xs text-muted shadow-[var(--card-shadow)] hover:text-text"
             >
-              <Icon size={13} />
+              <Icon size={14} />
               {tool.meta.name}
             </button>
           );
@@ -39,7 +39,7 @@ export function EmptyState() {
       </div>
 
       <button
-        className="flex items-center gap-1.5 text-[11px] text-faint transition-colors hover:text-muted"
+        className="flex items-center gap-1.5 text-xs text-faint transition-colors hover:text-muted"
         onClick={() => setPaletteOpen(true)}
       >
         <span>按</span>

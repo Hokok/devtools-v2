@@ -19,7 +19,7 @@ export function GlobalSettingsDialog() {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 backdrop-blur-[2px]"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay)] backdrop-blur-[3px]"
       onMouseDown={close}
       onKeyDown={(e) => {
         // 中文输入法组合期间不拦截按键；stopPropagation 防止 Esc 同时关掉工具级设置面板
@@ -33,15 +33,15 @@ export function GlobalSettingsDialog() {
       <div
         role="dialog"
         aria-label="全局设置"
-        className="w-[420px] max-w-[90vw] rounded-xl border border-line-strong bg-panel p-4 shadow-[0_24px_80px_rgba(0,0,0,0.55)]"
+        className="card w-[420px] max-w-[90vw] rounded-2xl p-5 shadow-[var(--shadow-dialog)]"
         onMouseDown={(e) => e.stopPropagation()}
         style={{ animation: "palette-pop 120ms ease-out" }}
       >
-        <h2 className="text-sm font-medium text-text">全局设置</h2>
+        <h2 className="text-base font-semibold text-text">全局设置</h2>
         <p className="mt-1 text-xs text-faint">作用于整个应用，即改即存、跨重启保留。</p>
 
-        <section className="mt-4">
-          <h3 className="text-[10px] font-medium tracking-[0.18em] text-faint uppercase">外观</h3>
+        <section className="mt-5">
+          <h3 className="text-2xs font-medium tracking-[0.08em] text-muted uppercase">外观</h3>
           <Segmented<ThemeMode>
             value={themeMode}
             onChange={setThemeMode}
@@ -51,13 +51,13 @@ export function GlobalSettingsDialog() {
               { value: "system", label: "跟随系统" },
             ]}
           />
-          <p className="mt-1.5 text-[10px] leading-4 text-faint">
+          <p className="mt-2 text-2xs leading-4 text-faint">
             GitHub Primer 配色；跟随系统时随操作系统外观实时切换，深浅也可在命令面板（Ctrl/Cmd+K）一键互换。
           </p>
         </section>
 
-        <section className="mt-4">
-          <h3 className="text-[10px] font-medium tracking-[0.18em] text-faint uppercase">工作区</h3>
+        <section className="mt-5">
+          <h3 className="text-2xs font-medium tracking-[0.08em] text-muted uppercase">工作区</h3>
           <Segmented<LayoutDirection>
             value={layoutDirection}
             onChange={setLayoutDirection}
@@ -66,16 +66,13 @@ export function GlobalSettingsDialog() {
               { value: "horizontal", label: "左右分栏", icon: Columns2 },
             ]}
           />
-          <p className="mt-1.5 text-[10px] leading-4 text-faint">
+          <p className="mt-2 text-2xs leading-4 text-faint">
             输入/输出区的排列方向，对所有工具生效；分栏比例仍按工具记忆。
           </p>
         </section>
 
-        <div className="mt-4 flex justify-end">
-          <button
-            onClick={close}
-            className="rounded-md border border-line bg-raise px-3 py-1.5 text-xs text-text transition-colors hover:bg-hover"
-          >
+        <div className="mt-5 flex justify-end">
+          <button onClick={close} className="btn btn-primary">
             完成
           </button>
         </div>
@@ -95,7 +92,7 @@ function Segmented<T extends string>({
   options: Array<{ value: T; label: string; icon?: LucideIcon }>;
 }) {
   return (
-    <div role="radiogroup" className="mt-2 flex gap-1 rounded-lg border border-line bg-raise p-1">
+    <div role="radiogroup" className="mt-2 flex gap-1 rounded-xl bg-raise p-1">
       {options.map((option) => {
         const selected = option.value === value;
         const Icon = option.icon;
@@ -106,11 +103,11 @@ function Segmented<T extends string>({
             aria-checked={selected}
             onClick={() => onChange(option.value)}
             className={[
-              "flex flex-1 items-center justify-center gap-1.5 rounded-md py-1.5 text-xs transition-colors",
-              selected ? "bg-active text-accent" : "text-muted hover:bg-hover hover:text-text",
+              "flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-medium transition-colors",
+              selected ? "bg-panel text-text shadow-[0_1px_3px_rgba(1,4,9,0.18)]" : "text-muted hover:text-text",
             ].join(" ")}
           >
-            {Icon && <Icon size={13} />}
+            {Icon && <Icon size={13} className={selected ? "text-accent" : ""} />}
             {option.label}
           </button>
         );

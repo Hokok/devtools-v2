@@ -17,7 +17,9 @@
         "height": 760,
         "minWidth": 880,
         "minHeight": 540,
-        "center": true
+        "center": true,
+        "theme": "Dark",
+        "backgroundColor": "#0d1117"
       }
     ],
     "security": {

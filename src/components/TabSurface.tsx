@@ -26,7 +26,7 @@ export function TabSurface({ tab, active }: { tab: Tab; active: boolean }) {
         </p>
         <button
           onClick={retry}
-          className="flex items-center gap-1.5 rounded-md border border-line bg-panel px-3 py-1.5 text-xs text-muted transition-colors hover:border-accent-dim hover:text-accent"
+          className="pressable flex items-center gap-1.5 rounded-md border border-line bg-panel px-3 py-1.5 text-xs text-muted hover:border-accent-dim hover:text-accent"
         >
           <RotateCcw size={12} />
           重试
@@ -62,5 +62,10 @@ export function TabSurface({ tab, active }: { tab: Tab; active: boolean }) {
     );
   }
 
-  return <div className={active ? "absolute inset-0 flex flex-col" : "hidden"}>{body}</div>;
+  return (
+    // contain: 布局/绘制隔离——缩放窗口时重排失效不外溢，减轻逐帧重排的走位感
+    <div className={active ? "absolute inset-0 flex flex-col [contain:layout_paint]" : "hidden"}>
+      {body}
+    </div>
+  );
 }

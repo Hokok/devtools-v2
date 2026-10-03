@@ -105,7 +105,7 @@ export function CommandPalette() {
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/55 backdrop-blur-[2px]"
+      className="fixed inset-0 z-50 bg-[var(--overlay)] backdrop-blur-[3px]"
       onMouseDown={() => setOpen(false)}
       onKeyDown={(e) => {
         // 中文输入法组合期间（选词回车/取消 Esc）不拦截按键
@@ -125,11 +125,11 @@ export function CommandPalette() {
       }}
     >
       <div
-        className="mx-auto mt-[12vh] w-[560px] max-w-[90vw] overflow-hidden rounded-xl border border-line-strong bg-panel shadow-[0_24px_80px_rgba(0,0,0,0.55)]"
+        className="card mx-auto mt-[12vh] w-[560px] max-w-[90vw] overflow-hidden rounded-2xl shadow-[var(--shadow-dialog)]"
         onMouseDown={(e) => e.stopPropagation()}
         style={{ animation: "palette-pop 120ms ease-out" }}
       >
-        <div className="flex items-center gap-2.5 border-b border-line px-3">
+        <div className="flex items-center gap-3 border-b border-line/60 px-4">
           <Search size={15} className="shrink-0 text-faint" />
           <input
             ref={inputRef}
@@ -139,12 +139,12 @@ export function CommandPalette() {
               setCursor(0);
             }}
             placeholder="搜索工具或命令…"
-            className="h-10 w-full bg-transparent text-sm text-text outline-none placeholder:text-faint"
+            className="h-11 w-full bg-transparent text-sm text-text outline-none placeholder:text-faint"
           />
           <span className="kbd shrink-0">ESC</span>
         </div>
 
-        <ul className="max-h-80 overflow-y-auto p-1.5">
+        <ul className="max-h-80 overflow-y-auto p-2">
           {results.length === 0 && (
             <li className="px-3 py-6 text-center text-xs text-faint">没有匹配的工具或命令</li>
           )}
@@ -169,12 +169,12 @@ export function CommandPalette() {
                 >
                   <Icon size={16} className={selected ? "text-accent" : "text-faint"} />
                   <span className="min-w-0 flex-1">
-                    <span className={`block truncate text-xs ${selected ? "text-text" : "text-muted"}`}>
+                    <span className={`block truncate text-sm ${selected ? "text-text" : "text-muted"}`}>
                       {name}
                     </span>
-                    <span className="block truncate text-[10px] text-faint">{description}</span>
+                    <span className="block truncate text-2xs text-faint">{description}</span>
                   </span>
-                  <span className="shrink-0 text-[10px] text-faint">{tag}</span>
+                  <span className="shrink-0 text-2xs text-faint">{tag}</span>
                   {selected && <CornerDownLeft size={12} className="shrink-0 text-accent" />}
                 </button>
               </li>
