@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """生成 DevTools 应用图标源图（1024x1024）。
 
-母题：石墨渐变圆角方块上的荧光青「❯_」终端提示符。
+母题：Primer 蓝渐变圆角方块上的白色「❯_」终端提示符——白笔画沿 y 微渐变、
+双层接触落影、边缘压暗勾体积。几何与应用内 LogoMark（EmptyState.tsx 的 SVG）
+完全一致，改一处务必同步另一处。
 4x 超采样抗锯齿；输出 app-icon.png 后用 `pnpm tauri icon app-icon.png` 生成全平台图标集。
 """
 import math
@@ -10,20 +12,23 @@ import zlib
 
 SIZE = 1024
 SS = 4  # 超采样倍数
-N = SIZE * SS
 
-# GitHub 深色画布渐变 + GitHub 蓝（Primer accent-fg dark）
-TOP = (22, 27, 34)      # #161b22
-BOTTOM = (13, 17, 23)   # #0d1117
-ACCENT = (68, 147, 248) # #4493f8
+# Primer 蓝渐变底 + 白渐变笔画 + 落影色
+BLUE_TOP = (90, 165, 252)
+BLUE_BOTTOM = (26, 92, 205)
+WHITE_TOP = (255, 255, 255)
+WHITE_BOTTOM = (214, 230, 250)
+SHADOW = (8, 34, 96)
 RADIUS = 235
-STROKE = 62  # 笔画半宽（1024 空间）
+HALF = 37.0  # 笔画半宽（1024 空间，总宽 74）
 
-# 「❯」折线（两段）与「_」下划线，坐标为 1024 空间
+# 「❯」折线与「_」下划线；包围盒 x∈[268,756] y∈[313,719]，光学居中
+CHEVRON = [(268, 313), (512, 516), (268, 719)]
+UNDERSCORE = (576, 719, 756, 719)
 SEGMENTS = [
-    (330, 330, 505, 512),
-    (505, 512, 330, 694),
-    (575, 688, 770, 688),
+    (*CHEVRON[0], *CHEVRON[1]),
+    (*CHEVRON[1], *CHEVRON[2]),
+    (*UNDERSCORE[0:2], *UNDERSCORE[2:4]),
 ]
 
 
@@ -36,38 +41,55 @@ def seg_distance(px, py, x1, y1, x2, y2):
     return math.hypot(px - (x1 + t * dx), py - (y1 + t * dy))
 
 
-def rounded_rect_mask(x, y, r, size):
-    cx = min(max(x, r), size - r)
-    cy = min(max(y, r), size - r)
-    d = math.hypot(x - cx, y - cy)
-    if d <= r - 1.5:
+def sd_rounded(px, py, r):
+    """圆角方形（全幅）带符号距离，负=内部。"""
+    qx = abs(px - SIZE / 2) - (SIZE / 2 - r)
+    qy = abs(py - SIZE / 2) - (SIZE / 2 - r)
+    return math.hypot(max(qx, 0.0), max(qy, 0.0)) + min(max(qx, qy), 0.0) - r
+
+
+def inside_rounded(x, y, r):
+    d = sd_rounded(x, y, r)
+    if d <= -1.5:
         return 1.0
-    if d >= r + 1.5:
+    if d >= 1.5:
         return 0.0
-    return (r + 1.5 - d) / 3.0
+    return (1.5 - d) / 3.0
+
+
+def dome(d, blur):
+    if d >= blur:
+        return 0.0
+    x = d / blur
+    return (1.0 - x * x) ** 2
+
+
+def lerp(c1, c2, t):
+    return tuple(c1[i] + (c2[i] - c1[i]) * t for i in range(3))
 
 
 def sample(x, y):
     """单采样点颜色（supersample 空间）。"""
     fx, fy = x / SS, y / SS
-    mask = rounded_rect_mask(fx, fy, RADIUS, SIZE)
+    mask = inside_rounded(fx, fy, RADIUS)
     if mask <= 0:
         return (0, 0, 0, 0)
-    # 背景垂直渐变
-    t = fy / SIZE
-    bg = tuple(TOP[i] + (BOTTOM[i] - TOP[i]) * t for i in range(3))
-    # 提示符后方的柔光
-    glow = max(0.0, 1.0 - math.hypot(fx - 470, fy - 512) / 460.0) ** 2 * 0.07
-    r = bg[0] + ACCENT[0] * glow
-    g = bg[1] + ACCENT[1] * glow
-    b = bg[2] + ACCENT[2] * glow
-    # 笔画（圆帽线段），带 1.5px 羽化
+    r, g, b = lerp(BLUE_TOP, BLUE_BOTTOM, fy / SIZE)
+    # 边缘压暗勾体积
+    d_edge = -sd_rounded(fx, fy, RADIUS)
+    k = max(0.0, 1.0 - d_edge / 130.0) * 0.18
+    r, g, b = lerp((r, g, b), (0, 0, 0), k)
+    # 双层接触落影（正下偏移，压成深蓝）
+    for dx, dy in ((0, 26), (0, 52)):
+        ds = min(seg_distance(fx - dx, fy - dy, *s) for s in SEGMENTS)
+        a = 0.20 * dome(max(ds - HALF, 0.0), 60.0)
+        r, g, b = lerp((r, g, b), SHADOW, a)
+    # 白渐变笔画（上亮下微灰），圆帽 + 1.5px 羽化
     d = min(seg_distance(fx, fy, *s) for s in SEGMENTS)
-    if d < STROKE + 1.0:
-        a = 1.0 if d <= STROKE - 1.0 else (STROKE + 1.0 - d) / 2.0
-        r = r * (1 - a) + ACCENT[0] * a
-        g = g * (1 - a) + ACCENT[1] * a
-        b = b * (1 - a) + ACCENT[2] * a
+    if d < HALF + 1.5:
+        a = 1.0 if d <= HALF - 1.5 else (HALF + 1.5 - d) / 3.0
+        color = lerp(WHITE_TOP, WHITE_BOTTOM, min(1.0, max(0.0, (fy - 313) / 406.0)))
+        r, g, b = lerp((r, g, b), color, a)
     return (min(255, int(r)), min(255, int(g)), min(255, int(b)), int(255 * mask))
 
 

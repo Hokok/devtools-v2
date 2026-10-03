@@ -53,20 +53,60 @@ export function EmptyState() {
   );
 }
 
-/** 品牌标记：与 app-icon 同母题的「❯」终端提示符 */
+/** 品牌标记：与 app-icon 同母题同几何（scripts/make-icon.py）的蓝底白「❯_」 */
 export function LogoMark({ size = 18 }: { size?: number }) {
   return (
-    <span
-      className="inline-flex shrink-0 items-center justify-center rounded-[4px] border border-accent/60 bg-accent/10 text-accent"
-      style={{
-        width: size,
-        height: size,
-        fontSize: size * 0.5,
-        lineHeight: 1,
-        boxShadow: "0 0 12px color-mix(in oklab, var(--accent) 25%, transparent)",
-      }}
-    >
-      ❯
-    </span>
+    <svg width={size} height={size} viewBox="0 0 1024 1024" className="shrink-0" aria-hidden="true">
+      <defs>
+        <linearGradient id="dt-logo-bg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#5aa5fc" />
+          <stop offset="1" stopColor="#1a5ccd" />
+        </linearGradient>
+        <linearGradient id="dt-logo-glyph" x1="0" y1="313" x2="0" y2="719" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#ffffff" />
+          <stop offset="1" stopColor="#d6e6fa" />
+        </linearGradient>
+        <clipPath id="dt-logo-clip">
+          <rect width="1024" height="1024" rx="235" />
+        </clipPath>
+        <filter id="dt-logo-shadow" x="-30%" y="-30%" width="160%" height="180%">
+          <feDropShadow dx="0" dy="26" stdDeviation="20" floodColor="#082260" floodOpacity="0.45" />
+        </filter>
+      </defs>
+      <rect width="1024" height="1024" rx="235" fill="url(#dt-logo-bg)" />
+      {/* 边缘压暗勾体积（裁回圆角内，只显示内半段） */}
+      <g clipPath="url(#dt-logo-clip)">
+        <rect
+          x="-35"
+          y="-35"
+          width="1094"
+          height="1094"
+          rx="270"
+          fill="none"
+          stroke="#082260"
+          strokeOpacity="0.32"
+          strokeWidth="70"
+        />
+      </g>
+      <g filter="url(#dt-logo-shadow)">
+        <polyline
+          points="268,313 512,516 268,719"
+          fill="none"
+          stroke="url(#dt-logo-glyph)"
+          strokeWidth="74"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <line
+          x1="576"
+          y1="719"
+          x2="756"
+          y2="719"
+          stroke="url(#dt-logo-glyph)"
+          strokeWidth="74"
+          strokeLinecap="round"
+        />
+      </g>
+    </svg>
   );
 }

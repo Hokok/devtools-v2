@@ -52,13 +52,14 @@
 }
 
 :root[data-theme="light"] {
-  --bg: #f6f8fa;          /* canvas-subtle */
+  /* 中性灰系：画布比白深一档衬出卡片层次，选中态不再带淡蓝（蓝只留给小面积强调） */
+  --bg: #f0f1f3;          /* canvas */
   --panel: #ffffff;       /* canvas-default */
-  --raise: #f6f8fa;
-  --hover: #eef1f4;
-  --active: #ddf4ff;      /* accent-subtle */
-  --line: #d1d9de;
-  --line-strong: #afb8c1;
+  --raise: #eef0f2;
+  --hover: #e8eaed;
+  --active: #e3e6ea;      /* 选中态底色：中性 */
+  --line: #d8dbdf;
+  --line-strong: #b6bcc2;
   --text: #1f2328;
   --muted: #59636e;
   --faint: #6e7781;
@@ -67,8 +68,9 @@
   --ok: #1a7f37;
   --danger: #cf222e;
   --warn: #9a6700;
-  --card-border: transparent;
-  --card-shadow: 0 1px 2px rgba(31, 35, 40, 0.05), 0 8px 24px rgba(31, 35, 40, 0.06);
+  /* 表面分层：浅色靠发丝描边 + 柔和投影定义卡片轮廓 */
+  --card-border: rgba(31, 35, 40, 0.1);
+  --card-shadow: 0 1px 2px rgba(31, 35, 40, 0.04), 0 6px 18px rgba(31, 35, 40, 0.05);
   --overlay: rgba(31, 35, 40, 0.42);
   --shadow-dialog: 0 24px 70px rgba(31, 35, 40, 0.2), 0 8px 24px rgba(31, 35, 40, 0.1);
   color-scheme: light;
@@ -101,13 +103,13 @@
 
   /* 字号五档 token（全应用只用这五档，禁止 11/15/12.5 等野值）：
      2xs=10 微标签/提示 · xs=12 次要文字/标签 · sm=13 正文/输入/编辑器 ·
-     md=14 导航/设置面板文字 · base=16 对话框标题 */
+     md=13 导航/设置面板文字（与 sm 同档，曾为 14 经用户要求降回） · base=16 对话框标题 */
   --text-2xs: 0.625rem;
   --text-2xs--line-height: 1.4;
   --text-sm: 0.8125rem;
   --text-sm--line-height: 1.5;
-  --text-md: 0.875rem;
-  --text-md--line-height: 1.45;
+  --text-md: 0.8125rem;
+  --text-md--line-height: 1.5;
 }
 
 @layer base {
@@ -235,6 +237,20 @@
 
   .field-label {
     @apply mb-1.5 block text-md text-muted;
+  }
+
+  /* JSON 比对：差异原位高亮（仅左存在/仅右存在/值不同） */
+  .cm-diff-only-left {
+    background: color-mix(in oklab, var(--danger) 22%, transparent);
+    border-radius: 3px;
+  }
+  .cm-diff-only-right {
+    background: color-mix(in oklab, var(--ok) 22%, transparent);
+    border-radius: 3px;
+  }
+  .cm-diff-changed {
+    background: color-mix(in oklab, var(--warn) 26%, transparent);
+    border-radius: 3px;
   }
 }
 
