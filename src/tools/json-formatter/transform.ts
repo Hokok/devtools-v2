@@ -4,6 +4,7 @@ export const jsonDefaults = {
   indentMode: "2", // "2" | "4" | "tab" | "minify"
   sortKeys: false,
   ensureAscii: false,
+  unescape: true,
 };
 
 export const jsonSchema: SettingField[] = [
@@ -28,6 +29,13 @@ export const jsonSchema: SettingField[] = [
   },
   {
     type: "toggle",
+    key: "unescape",
+    label: "去转义",
+    hint: '输入是转义的 JSON 文档（如 "{\\"a\\":1}"）时，先反转义再格式化',
+    default: jsonDefaults.unescape,
+  },
+  {
+    type: "toggle",
     key: "ensureAscii",
     label: "转义非 ASCII",
     hint: "把中文等字符输出为 \\uXXXX 转义序列",
@@ -45,6 +53,29 @@ export function formatJson(input: string, s: ToolSettings): TransformResult {
     parsed = JSON.parse(trimmed);
   } catch (err) {
     return { error: jsonError(err, trimmed) };
+  }
+
+  // 去转义：输入是转义的 JSON 文档（整体被引号包裹）时，反转义出内层再格式化。
+  // 文档形态（{ [ 开头）直接剥；字符串字面量仅在剥出来仍是字符串（多重转义
+  // 中间层）时继续剥——"123"、"hello" 这类标量字符串不提升。限深 5 层防打爆
+  if (s.unescape ?? jsonDefaults.unescape) {
+    for (let depth = 0; typeof parsed === "string" && depth < 5; depth++) {
+      const inner = parsed.trim();
+      const docLike = inner.startsWith("{") || inner.startsWith("[");
+      const quoted = inner.startsWith('"') && inner.endsWith('"');
+      if (!docLike && !quoted) break;
+      let next: unknown;
+      try {
+        next = JSON.parse(inner);
+      } catch {
+        break;
+      }
+      if (docLike || typeof next === "string") {
+        parsed = next;
+      } else {
+        break;
+      }
+    }
   }
 
   if (s.sortKeys) parsed = sortDeep(parsed);
