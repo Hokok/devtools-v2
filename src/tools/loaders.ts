@@ -8,6 +8,8 @@ import type { ToolImpl } from "../platform/types";
  */
 export const implLoaders: Record<string, () => Promise<ToolImpl>> = {
   "json-formatter": () => import("./json-formatter/impl").then((m) => m.default),
+  "json-diff": () => import("./json-diff/impl").then((m) => m.default),
+  "json-extract": () => import("./json-extract/impl").then((m) => m.default),
   base64: () => import("./base64/impl").then((m) => m.default),
   "url-codec": () => import("./url-codec/impl").then((m) => m.default),
   timestamp: () => import("./timestamp/impl").then((m) => m.default),

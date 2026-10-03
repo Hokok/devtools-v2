@@ -38,4 +38,5 @@
 - [ ] 修改任一设置（如 JSON 缩进）→ 重启应用 → 设置保留
   （落盘文件：`~/Library/Application Support/io.github.devtools.desktop/workbench.json`）
 - [ ] 命令面板 ⌘K、中文输入法打 "sj" 回车选词 → 打开时间戳而非误触发
+- [ ] JSON 提取：勾选列 → CSV 页签 → 「导出 CSV」弹出系统另存为对话框，保存后用 Excel 打开中文不乱码（dialog/fs 插件链路；用户在对话框选中的路径由 dialog 自动加入 fs 范围）
 - [ ] Windows 侧（CI 出包后）：安装、⌘W 对应 Ctrl+W、WebView2 渲染冒烟

@@ -7,6 +7,9 @@
     "core:window:allow-destroy",
     "store:default",
     "clipboard-manager:allow-write-text",
-    "clipboard-manager:allow-read-text"
+    "clipboard-manager:allow-read-text",
+    "dialog:default",
+    "fs:default",
+    "fs:allow-write-text-file"
   ]
 }

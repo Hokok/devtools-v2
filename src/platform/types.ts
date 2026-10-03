@@ -1,8 +1,8 @@
 import type { ComponentType } from "react";
 import type { LucideIcon } from "lucide-react";
 
-/** 工具分组。左侧导航与命令面板都按此组织。 */
-export type ToolGroupId = "format" | "encode" | "convert" | "generate" | "digest" | "text";
+/** 工具分组。左侧导航与命令面板都按此组织（数组顺序即侧栏顺序）。 */
+export type ToolGroupId = "json" | "format" | "encode" | "convert" | "generate" | "digest" | "text";
 
 export interface ToolGroup {
   id: ToolGroupId;
@@ -10,6 +10,7 @@ export interface ToolGroup {
 }
 
 export const TOOL_GROUPS: ToolGroup[] = [
+  { id: "json", name: "JSON" },
   { id: "format", name: "格式化" },
   { id: "encode", name: "编解码" },
   { id: "convert", name: "转换" },

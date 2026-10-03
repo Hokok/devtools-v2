@@ -1,16 +1,16 @@
 import { defineTool } from "../../platform/registry";
 import { implLoaders } from "../loaders";
-import { Braces } from "lucide-react";
+import { GitCompare } from "lucide-react";
 import { texts } from "./texts";
 
-export const jsonFormatter = defineTool(
+export const jsonDiff = defineTool(
   {
-    id: "json-formatter",
+    id: "json-diff",
     name: texts.name,
     description: texts.description,
-    icon: Braces,
+    icon: GitCompare,
     group: "json",
     keywords: texts.keywords,
   },
-  implLoaders["json-formatter"],
+  implLoaders["json-diff"],
 );

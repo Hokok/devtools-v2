@@ -6,10 +6,12 @@ import {
   foldKeymap,
   indentOnInput,
 } from "@codemirror/language";
-import { Compartment, EditorState, Transaction } from "@codemirror/state";
+import { Compartment, EditorState, StateEffect, StateField, Transaction } from "@codemirror/state";
+import type { Range } from "@codemirror/state";
 import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
 import { search, searchKeymap } from "@codemirror/search";
 import {
+  Decoration,
   drawSelection,
   EditorView,
   highlightActiveLine,
@@ -18,8 +20,37 @@ import {
   lineNumbers,
   placeholder as cmPlaceholder,
 } from "@codemirror/view";
+import type { DecorationSet } from "@codemirror/view";
 import { useUi } from "../platform/stores/ui";
 import { editorTheme } from "./cmTheme";
+
+/** 原位标记（如 JSON 比对的高亮）：offset 对应灌入时的文档，编辑后由编辑器自动映射 */
+export interface EditorMark {
+  from: number;
+  to: number;
+  className: string;
+}
+
+const setMarksEffect = StateEffect.define<readonly EditorMark[]>();
+
+const marksField = StateField.define<DecorationSet>({
+  create: () => Decoration.none,
+  update(marks, tr) {
+    marks = marks.map(tr.changes);
+    for (const effect of tr.effects) {
+      if (!effect.is(setMarksEffect)) continue;
+      const ranges: Range<Decoration>[] = [];
+      for (const mark of effect.value) {
+        const from = Math.max(0, Math.min(mark.from, tr.state.doc.length));
+        const to = Math.max(0, Math.min(mark.to, tr.state.doc.length));
+        if (to > from) ranges.push(Decoration.mark({ class: mark.className }).range(from, to));
+      }
+      marks = ranges.length ? Decoration.set(ranges, true) : Decoration.none;
+    }
+    return marks;
+  },
+  provide: (field) => EditorView.decorations.from(field),
+});
 
 interface CodeEditorProps {
   value: string;
@@ -31,6 +62,8 @@ interface CodeEditorProps {
   autoFocus?: boolean;
   /** 视图实例就绪后回调（供折叠全部/展开全部等命令使用；销毁时回调 null） */
   onViewReady?: (view: EditorView | null) => void;
+  /** 原位标记（差异高亮等），整批替换 */
+  marks?: EditorMark[];
 }
 
 export function CodeEditor({
@@ -41,6 +74,7 @@ export function CodeEditor({
   language,
   autoFocus,
   onViewReady,
+  marks,
 }: CodeEditorProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
@@ -77,6 +111,7 @@ export function CodeEditor({
           EditorView.editable.of(true),
         ]),
         langComp.current.of([]),
+        marksField,
         cmPlaceholder(placeholder ?? ""),
         keymap.of([...(readOnly ? [] : [indentWithTab]), ...defaultKeymap, ...historyKeymap, ...searchKeymap, ...foldKeymap]),
         EditorView.updateListener.of((update) => {
@@ -131,6 +166,10 @@ export function CodeEditor({
       ]),
     });
   }, [readOnly]);
+
+  useEffect(() => {
+    viewRef.current?.dispatch({ effects: setMarksEffect.of(marks ?? []) });
+  }, [marks]);
 
   useEffect(() => {
     let alive = true;

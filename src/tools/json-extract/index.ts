@@ -1,16 +1,16 @@
 import { defineTool } from "../../platform/registry";
 import { implLoaders } from "../loaders";
-import { Braces } from "lucide-react";
+import { FileSpreadsheet } from "lucide-react";
 import { texts } from "./texts";
 
-export const jsonFormatter = defineTool(
+export const jsonExtract = defineTool(
   {
-    id: "json-formatter",
+    id: "json-extract",
     name: texts.name,
     description: texts.description,
-    icon: Braces,
+    icon: FileSpreadsheet,
     group: "json",
     keywords: texts.keywords,
   },
-  implLoaders["json-formatter"],
+  implLoaders["json-extract"],
 );
