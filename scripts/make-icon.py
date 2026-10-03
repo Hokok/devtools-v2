@@ -2,8 +2,9 @@
 """生成 DevTools 应用图标源图（1024x1024）。
 
 母题：Primer 蓝渐变圆角方块上的白色「❯_」终端提示符——白笔画沿 y 微渐变、
-双层接触落影、边缘压暗勾体积。几何与应用内 LogoMark（EmptyState.tsx 的 SVG）
-完全一致，改一处务必同步另一处。
+双层接触落影、边缘压暗勾体积。方块按 macOS 图标网格占 824/1024 居中
+（四周 ~100px 透明边距，圆角 185），Dock 中与系统图标视觉等大。
+几何与应用内 LogoMark（EmptyState.tsx 的 SVG）完全一致，改一处务必同步另一处。
 4x 超采样抗锯齿；输出 app-icon.png 后用 `pnpm tauri icon app-icon.png` 生成全平台图标集。
 """
 import math
@@ -19,12 +20,15 @@ BLUE_BOTTOM = (26, 92, 205)
 WHITE_TOP = (255, 255, 255)
 WHITE_BOTTOM = (214, 230, 250)
 SHADOW = (8, 34, 96)
-RADIUS = 235
-HALF = 37.0  # 笔画半宽（1024 空间，总宽 74）
+# macOS 图标网格：图形 824×824 居中（四周 100px 透明），圆角 185
+TILE = 824.0
+TILE_MARGIN = (SIZE - TILE) / 2  # 100
+RADIUS = 185.0
+HALF = 30.0  # 笔画半宽（1024 空间，总宽 60）
 
-# 「❯」折线与「_」下划线；包围盒 x∈[268,756] y∈[313,719]，光学居中
-CHEVRON = [(268, 313), (512, 516), (268, 719)]
-UNDERSCORE = (576, 719, 756, 719)
+# 「❯」折线与「_」下划线；随方块等比缩放后光学居中（包围盒 ≈ 393×327）
+CHEVRON = [(316, 352), (512, 515), (316, 679)]
+UNDERSCORE = (564, 679, 708, 679)
 SEGMENTS = [
     (*CHEVRON[0], *CHEVRON[1]),
     (*CHEVRON[1], *CHEVRON[2]),
@@ -42,9 +46,10 @@ def seg_distance(px, py, x1, y1, x2, y2):
 
 
 def sd_rounded(px, py, r):
-    """圆角方形（全幅）带符号距离，负=内部。"""
-    qx = abs(px - SIZE / 2) - (SIZE / 2 - r)
-    qy = abs(py - SIZE / 2) - (SIZE / 2 - r)
+    """居中圆角方形（824 边长）带符号距离，负=内部。"""
+    half = TILE / 2
+    qx = abs(px - SIZE / 2) - (half - r)
+    qy = abs(py - SIZE / 2) - (half - r)
     return math.hypot(max(qx, 0.0), max(qy, 0.0)) + min(max(qx, qy), 0.0) - r
 
 
@@ -77,18 +82,18 @@ def sample(x, y):
     r, g, b = lerp(BLUE_TOP, BLUE_BOTTOM, fy / SIZE)
     # 边缘压暗勾体积
     d_edge = -sd_rounded(fx, fy, RADIUS)
-    k = max(0.0, 1.0 - d_edge / 130.0) * 0.18
+    k = max(0.0, 1.0 - d_edge / 105.0) * 0.18
     r, g, b = lerp((r, g, b), (0, 0, 0), k)
     # 双层接触落影（正下偏移，压成深蓝）
-    for dx, dy in ((0, 26), (0, 52)):
+    for dx, dy in ((0, 21), (0, 42)):
         ds = min(seg_distance(fx - dx, fy - dy, *s) for s in SEGMENTS)
-        a = 0.20 * dome(max(ds - HALF, 0.0), 60.0)
+        a = 0.20 * dome(max(ds - HALF, 0.0), 48.0)
         r, g, b = lerp((r, g, b), SHADOW, a)
     # 白渐变笔画（上亮下微灰），圆帽 + 1.5px 羽化
     d = min(seg_distance(fx, fy, *s) for s in SEGMENTS)
     if d < HALF + 1.5:
         a = 1.0 if d <= HALF - 1.5 else (HALF + 1.5 - d) / 3.0
-        color = lerp(WHITE_TOP, WHITE_BOTTOM, min(1.0, max(0.0, (fy - 313) / 406.0)))
+        color = lerp(WHITE_TOP, WHITE_BOTTOM, min(1.0, max(0.0, (fy - 352) / 327.0)))
         r, g, b = lerp((r, g, b), color, a)
     return (min(255, int(r)), min(255, int(g)), min(255, int(b)), int(255 * mask))
 
