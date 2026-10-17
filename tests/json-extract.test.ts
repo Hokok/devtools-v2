@@ -143,4 +143,18 @@ describe("extractJson", () => {
     expect(extractJson("   ", "", [])).toEqual({ keys: [] });
     expect(CSV_BOM).toBe("\uFEFF");
   });
+
+  it("原型链键名不假命中：constructor 视作缺失列（B3 回归）", () => {
+    const r = extractJson(JSON.stringify([{ a: 1 }]), "", ["constructor"]);
+    // `in` 会命中 Object.prototype；修复后应把 constructor 当作「勾了但全行缺失」→ 空列
+    expect(r.columns).toEqual(["constructor"]);
+    expect(r.rows).toEqual([[""]]);
+    expect(r.csv).toBe("constructor\r\n");
+    expect(r.json).toBe("[\n  {}\n]");
+  });
+
+  it("原型链键名：toString 同样不假命中", () => {
+    const r = extractJson(JSON.stringify([{ a: 1 }]), "", ["toString"], true);
+    expect(r.json).toBe("[\n  null\n]");
+  });
 });

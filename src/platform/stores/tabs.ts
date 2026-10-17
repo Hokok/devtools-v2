@@ -3,13 +3,16 @@ import { registry } from "../registry";
 
 /**
  * Tab = 工具实例（见 CONTEXT.md）。多开、会话内保活；
- * 输入内容只存在于内存 store——切换/卸载组件都不丢，重启即清空（用户决策）。
+ * 输入内容（input 与异形工具的 auxInput）只存在于内存 store——
+ * 切换/卸载组件都不丢，重启即清空（用户决策）。
  */
 
 export interface Tab {
   id: string;
   toolId: string;
   input: string;
+  /** Tab 级附属输入（异形工具的第二输入，如 JSON 比对右侧）；与 input 同等保活 */
+  auxInput: string;
   createdAt: number;
   lastActiveAt: number;
 }
@@ -25,11 +28,12 @@ interface TabsState {
   /** 循环切换 Tab（Ctrl+Tab / Ctrl+Shift+Tab），dir 为 1（下一个）或 -1（上一个） */
   cycleTab: (dir: 1 | -1) => void;
   setInput: (id: string, input: string) => void;
+  setAuxInput: (id: string, input: string) => void;
 }
 
 function newTab(toolId: string): Tab {
   const now = Date.now();
-  return { id: crypto.randomUUID(), toolId, input: "", createdAt: now, lastActiveAt: now };
+  return { id: crypto.randomUUID(), toolId, input: "", auxInput: "", createdAt: now, lastActiveAt: now };
 }
 
 /** 同工具的空 Tab 直接聚焦复用，避免手滑产生一堆空标签（DESIGN §3） */
@@ -93,14 +97,23 @@ export const useTabs = create<TabsState>((set, get) => ({
   setInput(id, input) {
     set({ tabs: get().tabs.map((t) => (t.id === id ? { ...t, input } : t)) });
   },
+
+  setAuxInput(id, input) {
+    set({ tabs: get().tabs.map((t) => (t.id === id ? { ...t, auxInput: input } : t)) });
+  },
 }));
 
 /**
  * 保活策略：激活 Tab + 最近使用的 ≤MAX_MOUNTED_TABS 个 Tab 挂载组件，
  * 其余只保留 Tab 头与 store 中的输入，切回时无感重建（输入是受控的）。
+ *
+ * 返回一次性算好的「应挂载集合」——由调用方（ToolHost）在每次渲染只算一次，
+ * 避免对每个 Tab 都排序整个数组（原实现的 O(N²·logN)）。
  */
-export function shouldMount(tab: Tab, activeId: string | null, all: Tab[]): boolean {
-  if (tab.id === activeId) return true;
+export function mountedTabIds(all: Tab[], activeId: string | null): Set<string> {
+  if (all.length <= MAX_MOUNTED_TABS) return new Set(all.map((t) => t.id));
   const recent = [...all].sort((a, b) => b.lastActiveAt - a.lastActiveAt).slice(0, MAX_MOUNTED_TABS);
-  return recent.some((t) => t.id === tab.id);
+  const ids = new Set(recent.map((t) => t.id));
+  if (activeId) ids.add(activeId);
+  return ids;
 }

@@ -1,4 +1,5 @@
-import { shouldMount, useTabs } from "../platform/stores/tabs";
+import { useMemo } from "react";
+import { mountedTabIds, useTabs } from "../platform/stores/tabs";
 import { EmptyState } from "./EmptyState";
 import { TabSurface } from "./TabSurface";
 
@@ -9,13 +10,13 @@ import { TabSurface } from "./TabSurface";
 export function ToolHost() {
   const tabs = useTabs((s) => s.tabs);
   const activeId = useTabs((s) => s.activeId);
+  // 一次性算出应挂载集合，避免对每个 Tab 都排序整个数组
+  const mounted = useMemo(() => mountedTabIds(tabs, activeId), [tabs, activeId]);
 
   return (
     <div className="relative min-h-0 flex-1">
       {tabs.map((tab) =>
-        shouldMount(tab, activeId, tabs) ? (
-          <TabSurface key={tab.id} tab={tab} active={tab.id === activeId} />
-        ) : null,
+        mounted.has(tab.id) ? <TabSurface key={tab.id} tab={tab} active={tab.id === activeId} /> : null,
       )}
       {activeId === null && tabs.length === 0 && <EmptyState />}
     </div>

@@ -199,7 +199,9 @@ export function resolvePath(
       ? typeof seg === "number"
         ? cur[seg]
         : undefined
-      : (cur as Record<string, unknown>)[seg as string];
+      : hasOwn(cur as object, seg as string)
+        ? (cur as Record<string, unknown>)[seg as string]
+        : undefined;
     if (next === undefined) {
       return { ok: false, message: `路径「${raw}」指向的值不存在` };
     }
@@ -210,9 +212,10 @@ export function resolvePath(
 
 // ————— CSV 单元格 —————
 
-/** 取一列的值：优先顶层字段，否则按点路径解析（手动补充的深层列，如 addr.city、tags[0]） */
+/** 取一列的值：优先顶层字段，否则按点路径解析（手动补充的深层列，如 addr.city、tags[0]）
+ * 用 hasOwnProperty 判存在——`in` 会命中原型链，constructor/toString 等键名会假命中。 */
 function valueAt(row: Record<string, unknown>, key: string): unknown {
-  if (key in row) return row[key];
+  if (hasOwn(row, key)) return row[key];
   const located = resolvePath(row, key);
   return located.ok ? located.value : undefined;
 }
@@ -247,6 +250,11 @@ function cellText(value: unknown): string {
 }
 
 // ————— 杂项 —————
+
+/** 自身属性判定——避免读到原型链上的 constructor/toString 等假值 */
+function hasOwn(obj: object, key: string): boolean {
+  return Object.prototype.hasOwnProperty.call(obj, key);
+}
 
 function typeName(value: unknown): string {
   if (value === null) return "null";

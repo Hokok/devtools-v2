@@ -1,4 +1,17 @@
 /** RFC 1321 紧凑实现：WebCrypto 不提供 MD5，此处本地计算（仅用于本地摘要，不涉安全场景）。 */
+
+/** 每轮左移位数（模块级常量，避免每次调用重建） */
+const S = [
+  7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22,
+  5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20,
+  4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23,
+  6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21,
+];
+
+/** 正弦常量表（模块级常量，避免每次调用跑 64 次 Math.sin） */
+const K = new Uint32Array(64);
+for (let i = 0; i < 64; i++) K[i] = Math.floor(Math.abs(Math.sin(i + 1)) * 2 ** 32) >>> 0;
+
 export function md5(input: string): string {
   const msg = new TextEncoder().encode(input);
   const len = msg.length;
@@ -14,15 +27,6 @@ export function md5(input: string): string {
   let b0 = 0xefcdab89;
   let c0 = 0x98badcfe;
   let d0 = 0x10325476;
-
-  const S = [
-    7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22,
-    5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20,
-    4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23,
-    6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21,
-  ];
-  const K = new Uint32Array(64);
-  for (let i = 0; i < 64; i++) K[i] = Math.floor(Math.abs(Math.sin(i + 1)) * 2 ** 32) >>> 0;
 
   for (let chunk = 0; chunk < paddedLen; chunk += 64) {
     const M = new Uint32Array(16);

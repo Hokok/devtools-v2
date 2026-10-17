@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import { PanelRightClose, PanelRightOpen, X } from "lucide-react";
 import { useTabs } from "../platform/stores/tabs";
 import { useUi } from "../platform/stores/ui";
@@ -14,10 +14,19 @@ export function TabBar() {
   const toggleSettings = useUi((s) => s.toggleSettings);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // 同工具多开时给标题加序号，便于区分
+  // 同工具多开时给标题加序号，便于区分（按工具预聚合，避免每个 Tab 都 filter 一遍）
+  const instances = useMemo(() => {
+    const byTool = new Map<string, string[]>();
+    for (const t of tabs) {
+      const list = byTool.get(t.toolId);
+      if (list) list.push(t.id);
+      else byTool.set(t.toolId, [t.id]);
+    }
+    return byTool;
+  }, [tabs]);
   const instanceNo = (toolId: string, tabId: string) => {
-    const siblings = tabs.filter((t) => t.toolId === toolId);
-    return siblings.length > 1 ? siblings.findIndex((t) => t.id === tabId) + 1 : undefined;
+    const list = instances.get(toolId);
+    return list && list.length > 1 ? list.indexOf(tabId) + 1 : undefined;
   };
 
   return (

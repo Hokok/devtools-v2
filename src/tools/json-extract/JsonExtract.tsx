@@ -13,6 +13,7 @@ import { CodeEditor } from "../../editor/CodeEditor";
 import { copyText, readText } from "../../platform/clipboard";
 import { saveTextFile } from "../../platform/saveFile";
 import { fmtCount } from "../../platform/format";
+import { useDebouncedCompute } from "../../platform/hooks";
 import type { ToolComponentProps } from "../../platform/types";
 import { CSV_BOM, extractJson } from "./extract";
 
@@ -41,9 +42,11 @@ export function JsonExtract({
   const path = String(settings.path ?? "");
   const selected = useMemo(() => parseCols(settings.cols), [settings.cols]);
   const valueArrayOn = settings.valueArray === true;
-  const analysis = useMemo(
+  // 提取是线性转换，实时进行；走防抖避免大文本逐键重算卡顿
+  const analysis = useDebouncedCompute(
     () => extractJson(input, path, selected, valueArrayOn),
     [input, path, selected, valueArrayOn],
+    input.length > 64 * 1024 ? 350 : 180,
   );
 
   const [tab, setTab] = useState<"json" | "csv">("json");

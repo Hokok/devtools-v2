@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { CodeEditor, type EditorMark } from "../../editor/CodeEditor";
 import { readText } from "../../platform/clipboard";
+import { useDebouncedCompute } from "../../platform/hooks";
 import type { ToolComponentProps } from "../../platform/types";
 import { diffJson, type DiffEntry, type DiffError, type DiffKind } from "./diff";
 
@@ -44,23 +45,27 @@ const MARK_CLASS: Record<DiffKind, string> = {
 
 /**
  * 异形布局（ADR-0003 逃逸）：左右两个编辑器原位高亮差异，底部差异清单可点击跳转。
- * 差异计算是线性扫描，实时同步进行（与正则测试器不同，无病态输入风险，不必进 Worker）。
+ * 差异计算是线性扫描，实时进行——但走防抖，避免大文本下逐键重算卡顿。
+ * 右侧内容存在 Tab 级 auxInput（store）而非组件局部态，LRU 卸载不丢。
  */
-export function JsonDiff({ input, onInput }: ToolComponentProps) {
-  const [right, setRight] = useState("");
+export function JsonDiff({ input, onInput, auxInput, onAuxInput }: ToolComponentProps) {
   const [listOpen, setListOpen] = useState(true);
   const leftView = useRef<EditorView | null>(null);
   const rightView = useRef<EditorView | null>(null);
 
-  const result = useMemo(() => diffJson(input, right), [input, right]);
+  const result = useDebouncedCompute(
+    () => diffJson(input, auxInput),
+    [input, auxInput],
+    input.length + auxInput.length > 64 * 1024 ? 350 : 180,
+  );
 
   const leftMarks = useMemo(() => collectMarks(result.entries, "leftRange"), [result.entries]);
   const rightMarks = useMemo(() => collectMarks(result.entries, "rightRange"), [result.entries]);
 
   const swap = () => {
     const left = input;
-    onInput(right);
-    setRight(left);
+    onInput(auxInput);
+    onAuxInput(left);
   };
 
   const jump = (range: [number, number] | undefined, side: "left" | "right") => {
@@ -108,7 +113,7 @@ export function JsonDiff({ input, onInput }: ToolComponentProps) {
                 title="载入示例"
                 onClick={() => {
                   onInput(SAMPLE_LEFT);
-                  setRight(SAMPLE_RIGHT);
+                  onAuxInput(SAMPLE_RIGHT);
                 }}
               >
                 <Sparkles size={13} />
@@ -118,8 +123,8 @@ export function JsonDiff({ input, onInput }: ToolComponentProps) {
         />
         <SideCard
           side="right"
-          value={right}
-          onChange={setRight}
+          value={auxInput}
+          onChange={onAuxInput}
           marks={rightMarks}
           error={result.rightError}
           onViewReady={(view) => (rightView.current = view)}

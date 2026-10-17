@@ -193,6 +193,11 @@ function toValue(node: SpanNode): unknown {
 
 // ————— 比较 —————
 
+/** 自身属性判定——避免 `in` 命中原型链（constructor/toString 等假命中） */
+function hasOwn(obj: object, key: string): boolean {
+  return Object.prototype.hasOwnProperty.call(obj, key);
+}
+
 /** 宽松相等：标量 String() 后比较；对象/数组按结构递归（数组顺序敏感） */
 function deepLoose(a: unknown, b: unknown): boolean {
   if (a !== null && b !== null && typeof a === "object" && typeof b === "object") {
@@ -206,7 +211,7 @@ function deepLoose(a: unknown, b: unknown): boolean {
     const aKeys = Object.keys(aRecord);
     return (
       aKeys.length === Object.keys(bRecord).length &&
-      aKeys.every((k) => k in bRecord && deepLoose(aRecord[k], bRecord[k]))
+      aKeys.every((k) => hasOwn(bRecord, k) && deepLoose(aRecord[k], bRecord[k]))
     );
   }
   return String(a) === String(b);

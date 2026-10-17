@@ -8,6 +8,5 @@ export function fmtCount(text: string): string {
 
 export function fmtMs(ms: number): string {
   if (ms < 1) return "<1ms";
-  if (ms < 100) return `${ms.toFixed(0)}ms`;
   return `${ms.toFixed(0)}ms`;
 }

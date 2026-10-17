@@ -84,6 +84,9 @@ export interface SettingCondition {
 export interface ToolComponentProps {
   input: string;
   onInput: (value: string) => void;
+  /** Tab 级附属输入（第二输入，如 JSON 比对右侧）；随 Tab 保活、卸载不丢 */
+  auxInput: string;
+  onAuxInput: (value: string) => void;
   settings: ToolSettings;
   onSettingsChange: (patch: ToolSettings) => void;
   /** 与模板工具一致的示例数据（供「载入示例」按钮） */

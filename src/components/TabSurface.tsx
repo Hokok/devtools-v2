@@ -15,6 +15,7 @@ export function TabSurface({ tab, active }: { tab: Tab; active: boolean }) {
   const { tool, error, retry } = useLoadedTool(tab.toolId);
   const { settings, update } = useToolSettings(tool);
   const setInput = useTabs((s) => s.setInput);
+  const setAuxInput = useTabs((s) => s.setAuxInput);
 
   let body: React.ReactNode;
   if (error) {
@@ -46,6 +47,8 @@ export function TabSurface({ tab, active }: { tab: Tab; active: boolean }) {
       <Component
         input={tab.input}
         onInput={(value) => setInput(tab.id, value)}
+        auxInput={tab.auxInput}
+        onAuxInput={(value) => setAuxInput(tab.id, value)}
         settings={settings}
         onSettingsChange={update}
         sample={tool.sample}

@@ -85,6 +85,8 @@ export function CodeEditor({
   onViewReadyRef.current = onViewReady;
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
+  /** 最近一次由本编辑器内部产生的值：值回流时据此短路，免去 doc.toString() 全量拷贝 */
+  const lastEmittedRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!hostRef.current) return;
@@ -116,7 +118,9 @@ export function CodeEditor({
         keymap.of([...(readOnly ? [] : [indentWithTab]), ...defaultKeymap, ...historyKeymap, ...searchKeymap, ...foldKeymap]),
         EditorView.updateListener.of((update) => {
           if (update.docChanged && onChangeRef.current) {
-            onChangeRef.current(update.state.doc.toString());
+            const next = update.state.doc.toString();
+            lastEmittedRef.current = next;
+            onChangeRef.current(next);
           }
         }),
       ],
@@ -124,6 +128,7 @@ export function CodeEditor({
     const view = new EditorView({ state, parent: hostRef.current });
     if (autoFocus) view.focus();
     viewRef.current = view;
+    lastEmittedRef.current = value; // 初始 doc 即 value，后续 value effect 据此短路
     onViewReadyRef.current?.(view);
     return () => {
       onViewReadyRef.current?.(null);
@@ -147,6 +152,8 @@ export function CodeEditor({
   useEffect(() => {
     const view = viewRef.current;
     if (!view) return;
+    // 值来自本编辑器的受控回流（正在输入）：无需同步，避免每击键一次全量拷贝
+    if (value === lastEmittedRef.current) return;
     const current = view.state.doc.toString();
     if (current !== value) {
       view.dispatch({
