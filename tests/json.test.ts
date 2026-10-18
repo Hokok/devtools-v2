@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatJson, jsonDefaults } from "../src/tools/json-formatter/transform";
+import { errorPosition, formatJson, jsonDefaults } from "../src/tools/json-formatter/transform";
 
 describe("formatJson", () => {
   it("2 空格缩进美化", () => {
@@ -56,6 +56,36 @@ describe("formatJson", () => {
     expect(r.error).toBeDefined();
     expect(r.error?.message).toMatch(/JSON/i);
     if (r.error?.line !== undefined) expect(r.error.line).toBe(3);
+  });
+
+  describe("errorPosition：从报错文案还原位置", () => {
+    const input = '{\n  "a": 1,\n  "b": ,\n  "c": 3\n}';
+
+    it("新版 V8 片段（带引号包裹）反查位置 → 第 3 行", () => {
+      const message = `Unexpected token ',', ..."1,\n  "b": ,\n  "c": 3"... is not valid JSON`;
+      const pos = errorPosition(message, input);
+      expect(pos).toBe(19);
+      expect(input.slice(0, pos!).split("\n")).toHaveLength(3);
+    });
+
+    it("旧版 V8 的 at position N", () => {
+      expect(errorPosition("Unexpected token } in JSON at position 19", input)).toBe(19);
+    });
+
+    it("无位置信息时返回 undefined（JSC 风格）", () => {
+      expect(errorPosition("JSON Parse error: Unexpected token ','", input)).toBeUndefined();
+    });
+
+    it("片段贴开头：窗口起点为 0，位置 = 片段长度 - 10", () => {
+      const short = "nope-not-json";
+      // pos=2 时窗口为 [0, 12)，片段正好是 input.slice(0,12)
+      const pos = errorPosition(`Unexpected token 'o', ..."nope-not-jso"... is not valid JSON`, short);
+      expect(pos).toBe(2);
+    });
+
+    it("片段与原文对不上时返回 undefined，不误报行号", () => {
+      expect(errorPosition('Unexpected token, ..."不存在"... is not valid JSON', input)).toBeUndefined();
+    });
   });
 
   it("空输入静默返回", () => {

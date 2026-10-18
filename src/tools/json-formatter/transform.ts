@@ -108,15 +108,31 @@ function sortDeep(value: unknown): unknown {
 /** 从 JSON.parse 的报错里尽量还原行号（V8: position N；SpiderMonkey/JSC: line N） */
 function jsonError(err: unknown, input: string): TransformError {
   const message = err instanceof Error ? err.message : String(err);
-  let line: number | undefined;
 
   const lineMatch = /line (\d+)/i.exec(message);
+  if (lineMatch) return { message, line: Number(lineMatch[1]) };
+
+  const pos = errorPosition(message, input);
+  if (pos === undefined) return { message };
+  return { message, line: input.slice(0, Math.min(pos, input.length)).split("\n").length };
+}
+
+/**
+ * 从报错文案还原出错位置（字符偏移）。
+ * 旧版 V8 直接给 `at position N`；新版 V8（含 Windows WebView2）只给错误点
+ * **前后各 10 字符**的原文片段，且用引号包住：
+ * `Unexpected token ',', ..."b": ,\n..."... is not valid JSON`。
+ * 片段是原文的切片，故可 indexOf 反查窗口起点；窗口未贴开头时起点即 pos-10，
+ * 贴着开头时窗口起点为 0、片段长度即 pos+10。JSC（macOS WKWebView）不给位置，放弃行号。
+ */
+export function errorPosition(message: string, input: string): number | undefined {
   const posMatch = /position (\d+)/i.exec(message);
-  if (lineMatch) {
-    line = Number(lineMatch[1]);
-  } else if (posMatch) {
-    const pos = Math.min(Number(posMatch[1]), input.length);
-    line = input.slice(0, pos).split("\n").length;
-  }
-  return { message, line };
+  if (posMatch) return Number(posMatch[1]);
+
+  const raw = /\.\.\.([\s\S]*)\.\.\. is not valid JSON\s*$/.exec(message)?.[1];
+  if (!raw) return undefined;
+  const snippet = raw.length >= 2 && raw.startsWith('"') && raw.endsWith('"') ? raw.slice(1, -1) : raw;
+  const idx = input.indexOf(snippet);
+  if (idx < 0) return undefined;
+  return idx === 0 ? Math.max(0, snippet.length - 10) : idx + 10;
 }
