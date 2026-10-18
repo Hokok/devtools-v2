@@ -6,8 +6,6 @@ export const jsonDefaults = {
   sortKeys: false,
   ensureAscii: false,
   unescape: true,
-  /** 输出区视图模式（树视图/文本视图，ADR-0005）；存工具配置但不进设置面板 */
-  outputView: "tree" as "tree" | "text",
 };
 
 export const jsonSchema: SettingField[] = [

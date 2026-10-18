@@ -3,9 +3,9 @@ import { tags as t } from "@lezer/highlight";
 import { EditorView } from "@codemirror/view";
 
 /**
- * 编辑器主题：GitHub 官方语法语义色（Primer）。
- * dark: keyword #ff7b72 / string #a5d6ff / constant #79c0fd / function #d2a8ff
- * light: keyword #cf222e / string #0a3069 / constant #0550ae / function #8250df
+ * 编辑器主题：GitHub Primer 基调；JSON 值类型按可读性拉开色相（ADR-0005）。
+ * dark: key #79c0fd / string #7ee787 / number #d2a8ff / bool+null #ff7b72
+ * light: key #0451a5 / string #a31515 / number #098658 / bool+null #0969da
  */
 
 const darkView = EditorView.theme(
@@ -57,16 +57,17 @@ const darkView = EditorView.theme(
 const darkHighlight = syntaxHighlighting(
   HighlightStyle.define([
     { tag: t.keyword, color: "#ff7b72" },
-    { tag: t.string, color: "#a5d6ff" },
-    { tag: t.number, color: "#79c0fd" },
-    { tag: t.bool, color: "#79c0fd" },
-    { tag: t.null, color: "#79c0fd" },
+    // JSON 可读性升级（ADR-0005）：类型间拉开色相——key 蓝 / 字符串绿 / 数字紫 / 布尔红
+    { tag: t.string, color: "#7ee787" },
+    { tag: t.number, color: "#d2a8ff" },
+    { tag: t.bool, color: "#ff7b72" },
+    { tag: t.null, color: "#ff7b72", fontStyle: "italic" },
     { tag: t.comment, color: "#8b949e", fontStyle: "italic" },
     { tag: t.propertyName, color: "#79c0fd" },
     { tag: t.variableName, color: "#e6edf3" },
     { tag: t.function(t.variableName), color: "#d2a8ff" },
     { tag: t.operator, color: "#ff7b72" },
-    { tag: t.punctuation, color: "#e6edf3" },
+    { tag: t.punctuation, color: "#8b949e" },
     { tag: t.regexp, color: "#7ee787" },
     { tag: t.escape, color: "#ffa657" },
     { tag: t.invalid, color: "#f85149" },
@@ -122,16 +123,17 @@ const lightView = EditorView.theme(
 const lightHighlight = syntaxHighlighting(
   HighlightStyle.define([
     { tag: t.keyword, color: "#cf222e" },
-    { tag: t.string, color: "#0a3069" },
-    { tag: t.number, color: "#0550ae" },
-    { tag: t.bool, color: "#0550ae" },
-    { tag: t.null, color: "#0550ae" },
+    // JSON 可读性升级（ADR-0005）：key 蓝 / 字符串绛红 / 数字绿 / 布尔亮蓝
+    { tag: t.string, color: "#a31515" },
+    { tag: t.number, color: "#098658" },
+    { tag: t.bool, color: "#0969da" },
+    { tag: t.null, color: "#0969da", fontStyle: "italic" },
     { tag: t.comment, color: "#6e7781", fontStyle: "italic" },
-    { tag: t.propertyName, color: "#0550ae" },
+    { tag: t.propertyName, color: "#0451a5" },
     { tag: t.variableName, color: "#1f2328" },
     { tag: t.function(t.variableName), color: "#8250df" },
     { tag: t.operator, color: "#cf222e" },
-    { tag: t.punctuation, color: "#1f2328" },
+    { tag: t.punctuation, color: "#57606a" },
     { tag: t.regexp, color: "#116329" },
     { tag: t.escape, color: "#953800" },
     { tag: t.invalid, color: "#82071e" },

@@ -114,11 +114,6 @@ export interface ToolImpl {
   outputTextActions?: boolean;
   /** 编辑器语言包，按需加载（如 JSON 高亮），跟随工具实现进分包 */
   language?: () => Promise<import("@codemirror/language").LanguageSupport>;
-  /**
-   * 输出是 JSON 文本（ADR-0005）：模板型工具据此在输出区提供树视图/文本视图。
-   * 不声明就永远只用文本视图（Base64/时间戳等输出碰巧合法也不该长成树）。
-   */
-  jsonOutput?: boolean;
   transform?: (input: string, settings: ToolSettings) => TransformResult | Promise<TransformResult>;
   Component?: ToolComponent;
 }

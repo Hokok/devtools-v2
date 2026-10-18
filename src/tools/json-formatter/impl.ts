@@ -14,7 +14,6 @@ const jsonImpl: ToolImpl = {
   settingsSchema: [...jsonSchema],
   sample,
   transform: formatJson,
-  jsonOutput: true,
   language: () => import("@codemirror/lang-json").then((m) => m.json()),
 };
 

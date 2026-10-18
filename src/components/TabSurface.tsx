@@ -62,7 +62,6 @@ export function TabSurface({ tab, active }: { tab: Tab; active: boolean }) {
         input={tab.input}
         onInput={(value) => setInput(tab.id, value)}
         settings={settings}
-        onSettingsChange={update}
       />
     );
   }

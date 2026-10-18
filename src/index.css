@@ -48,13 +48,6 @@
   --card-shadow: none;
   --overlay: rgba(1, 4, 9, 0.62);
   --shadow-dialog: 0 24px 70px rgba(1, 4, 9, 0.5), 0 4px 16px rgba(1, 4, 9, 0.25);
-  /* 树视图等非 CodeMirror 场景的语法语义色——必须与 cmTheme.ts 逐值一致（ADR-0005） */
-  --code-key: #79c0fd;      /* propertyName */
-  --code-string: #a5d6ff;   /* string */
-  --code-number: #79c0fd;   /* number */
-  --code-bool: #79c0fd;     /* bool */
-  --code-null: #79c0fd;     /* null（斜体区分） */
-  --code-punct: #e6edf3;    /* punctuation */
   color-scheme: dark;
 }
 
@@ -80,13 +73,6 @@
   --card-shadow: 0 1px 2px rgba(31, 35, 40, 0.04), 0 6px 18px rgba(31, 35, 40, 0.05);
   --overlay: rgba(31, 35, 40, 0.42);
   --shadow-dialog: 0 24px 70px rgba(31, 35, 40, 0.2), 0 8px 24px rgba(31, 35, 40, 0.1);
-  /* 同上：与 cmTheme.ts 亮色侧逐值一致 */
-  --code-key: #0550ae;
-  --code-string: #0a3069;
-  --code-number: #0550ae;
-  --code-bool: #0550ae;
-  --code-null: #0550ae;
-  --code-punct: #1f2328;
   color-scheme: light;
 }
 
@@ -265,40 +251,6 @@
   .cm-diff-changed {
     background: color-mix(in oklab, var(--warn) 26%, transparent);
     border-radius: 3px;
-  }
-
-  /* ————— JSON 树视图（自研，src/components/JsonTree.tsx）————— */
-  .jt-key {
-    color: var(--code-key);
-    overflow-wrap: anywhere;
-  }
-  .jt-index {
-    color: var(--code-punct);
-    opacity: 0.72;
-  }
-  .jt-str {
-    color: var(--code-string);
-  }
-  .jt-num {
-    color: var(--code-number);
-  }
-  .jt-bool {
-    color: var(--code-bool);
-  }
-  .jt-null {
-    color: var(--code-null);
-    font-style: italic;
-    opacity: 0.85;
-  }
-  .jt-punct {
-    color: var(--code-punct);
-    opacity: 0.55;
-  }
-  /* 容器折叠后的规模提示 */
-  .jt-meta {
-    color: var(--muted);
-    font-style: italic;
-    opacity: 0.8;
   }
 }
 
