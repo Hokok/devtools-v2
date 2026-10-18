@@ -10,7 +10,9 @@ import {
   TriangleAlert,
 } from "lucide-react";
 import { CodeEditor } from "../../editor/CodeEditor";
+import type { EditorView } from "@codemirror/view";
 import { copyText, readText } from "../../platform/clipboard";
+import { jumpToLine } from "../../platform/editorJump";
 import { saveTextFile } from "../../platform/saveFile";
 import { fmtCount } from "../../platform/format";
 import { useDebouncedCompute } from "../../platform/hooks";
@@ -43,6 +45,7 @@ export function JsonExtract({
   const path = String(settings.path ?? "");
   const selected = useMemo(() => parseCols(settings.cols), [settings.cols]);
   const valueArrayOn = settings.valueArray === true;
+  const inputView = useRef<EditorView | null>(null);
   // 提取是线性转换，实时进行；走防抖避免大文本逐键重算卡顿
   const analysis = useDebouncedCompute(
     () => extractJson(input, path, selected, valueArrayOn),
@@ -79,6 +82,7 @@ export function JsonExtract({
   const output = tab === "json" ? analysis.json : analysis.csv;
   const hasOutput = output !== undefined && output !== "";
   const errorBanner = analysis.error ?? (analysis.pathError ? { message: analysis.pathError } : undefined);
+  const errorLine = analysis.error?.line;
 
   const doCopy = async () => {
     if (!hasOutput) return;
@@ -140,6 +144,7 @@ export function JsonExtract({
             value={input}
             onChange={onInput}
             language={JSON_LANG}
+            onViewReady={(view) => (inputView.current = view)}
             placeholder="粘贴 JSON：对象数组，或用下方定位路径圈出数组…"
           />
         </div>
@@ -236,7 +241,22 @@ export function JsonExtract({
       {errorBanner && (
         <div className="flex shrink-0 items-center gap-2 rounded-lg border border-danger/25 bg-danger/8 px-2.5 py-1.5 text-xs text-danger">
           <TriangleAlert size={13} className="shrink-0" />
-          <span className="break-all">{errorBanner.message}</span>
+          <span className="break-all">
+            {errorBanner.message}
+            {errorLine !== undefined && (
+              <>
+                {"（"}
+                <button
+                  className="pressable underline decoration-dotted underline-offset-2 hover:text-text"
+                  title="跳到输入区该行"
+                  onClick={() => jumpToLine(inputView.current, errorLine)}
+                >
+                  第 {errorLine} 行
+                </button>
+                {"）"}
+              </>
+            )}
+          </span>
         </div>
       )}
 

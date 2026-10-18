@@ -10,10 +10,18 @@ import {
   Sparkles,
 } from "lucide-react";
 import { CodeEditor, type EditorMark } from "../../editor/CodeEditor";
+import { OutputActions } from "../../components/OutputActions";
 import { readText } from "../../platform/clipboard";
 import { useDebouncedCompute } from "../../platform/hooks";
 import type { ToolComponentProps } from "../../platform/types";
-import { diffJson, type DiffEntry, type DiffError, type DiffKind } from "./diff";
+import {
+  DIFF_KIND_LABEL,
+  diffJson,
+  diffReport,
+  type DiffEntry,
+  type DiffError,
+  type DiffKind,
+} from "./diff";
 
 const JSON_LANG = () => import("@codemirror/lang-json").then((m) => m.json());
 
@@ -31,10 +39,11 @@ const SAMPLE_RIGHT = `{
   "owner": "huangzhan"
 }`;
 
-const KIND_META: Record<DiffKind, { label: string; dot: string }> = {
-  "only-left": { label: "仅左", dot: "bg-danger" },
-  "only-right": { label: "仅右", dot: "bg-ok" },
-  changed: { label: "值不同", dot: "bg-warn" },
+/** 颜色留在界面层；文案（仅左/仅右/值不同）与纯文本报告共用 DIFF_KIND_LABEL */
+const KIND_DOT: Record<DiffKind, string> = {
+  "only-left": "bg-danger",
+  "only-right": "bg-ok",
+  changed: "bg-warn",
 };
 
 const MARK_CLASS: Record<DiffKind, string> = {
@@ -61,6 +70,7 @@ export function JsonDiff({ input, onInput, auxInput, onAuxInput }: ToolComponent
 
   const leftMarks = useMemo(() => collectMarks(result.entries, "leftRange"), [result.entries]);
   const rightMarks = useMemo(() => collectMarks(result.entries, "rightRange"), [result.entries]);
+  const report = useMemo(() => diffReport(result.entries), [result.entries]);
 
   const swap = () => {
     const left = input;
@@ -139,13 +149,22 @@ export function JsonDiff({ input, onInput, auxInput, onAuxInput }: ToolComponent
           <span className={`truncate text-2xs ${summary.ok ? "text-ok" : "text-faint"}`}>
             {summary.text}
           </span>
-          <button
-            className="icon-btn ml-auto"
-            title={listOpen ? "收起清单" : "展开清单"}
-            onClick={() => setListOpen((v) => !v)}
-          >
-            {listOpen ? <ChevronDown size={13} /> : <ChevronUp size={13} />}
-          </button>
+          {/* 差异清单本身就是产物：可复制 / 另存 / 发送到别的工具（覆盖显示不适用，去掉文本操作） */}
+          <span className="ml-auto flex items-center gap-0.5">
+            <OutputActions
+              text={report}
+              disabled={!report}
+              fileName="json-diff.txt"
+              showTextActions={false}
+            />
+            <button
+              className="icon-btn"
+              title={listOpen ? "收起清单" : "展开清单"}
+              onClick={() => setListOpen((v) => !v)}
+            >
+              {listOpen ? <ChevronDown size={13} /> : <ChevronUp size={13} />}
+            </button>
+          </span>
         </header>
         {listOpen && (
           <div className="min-h-0 flex-1 overflow-y-auto">
@@ -262,7 +281,6 @@ function DiffRow({
   entry: DiffEntry;
   onJump: (range: [number, number] | undefined, side: "left" | "right") => void;
 }) {
-  const meta = KIND_META[entry.kind];
   return (
     <button
       onClick={() => {
@@ -272,8 +290,8 @@ function DiffRow({
       title={entry.path}
       className="flex w-full items-center gap-2 border-b border-line/60 px-3 py-1.5 text-left last:border-b-0 hover:bg-hover"
     >
-      <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${meta.dot}`} />
-      <span className="w-11 shrink-0 text-2xs text-muted">{meta.label}</span>
+      <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${KIND_DOT[entry.kind]}`} />
+      <span className="w-11 shrink-0 text-2xs text-muted">{DIFF_KIND_LABEL[entry.kind]}</span>
       <span className="min-w-0 flex-1 truncate font-mono text-xs text-text">{entry.path}</span>
       <span className="max-w-[45%] shrink-0 truncate text-right font-mono text-2xs text-faint">
         {entry.left ?? "—"}

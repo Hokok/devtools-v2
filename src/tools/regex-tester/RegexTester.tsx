@@ -1,5 +1,7 @@
+import { useMemo } from "react";
 import { ClipboardPaste, Eraser, LoaderCircle, Sparkles, TriangleAlert } from "lucide-react";
 import { CodeEditor } from "../../editor/CodeEditor";
+import { OutputActions } from "../../components/OutputActions";
 import { readText } from "../../platform/clipboard";
 import { useRegexMatches } from "../../platform/useRegexMatches";
 import type { ToolComponentProps } from "../../platform/types";
@@ -127,10 +129,21 @@ export function RegexTester({ input, onInput, settings, onSettingsChange, sample
 }
 
 function MatchList({ matches }: { matches: RegexMatchInfo[] }) {
+  // 匹配结果的"产物"形态：一行一个匹配项——送进文本处理就能排序/去重
+  const text = useMemo(() => matches.map((m) => m.text).join("\n"), [matches]);
+
   return (
     <section className="card hidden w-[232px] shrink-0 flex-col overflow-hidden md:flex">
-      <header className="flex h-8 shrink-0 items-center px-3">
+      <header className="flex h-8 shrink-0 items-center gap-1 px-3">
         <span className="text-2xs font-medium tracking-[0.08em] text-muted uppercase">匹配</span>
+        <span className="ml-auto flex items-center gap-0.5">
+          <OutputActions
+            text={text}
+            disabled={matches.length === 0}
+            fileName="matches.txt"
+            showTextActions={false}
+          />
+        </span>
       </header>
       <div className="min-h-0 flex-1 overflow-y-auto">
         {matches.length === 0 ? (

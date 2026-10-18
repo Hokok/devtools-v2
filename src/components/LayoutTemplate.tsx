@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { CodeEditor } from "../editor/CodeEditor";
 import { copyText, readText } from "../platform/clipboard";
+import { jumpToLine } from "../platform/editorJump";
 import { useToolTransform } from "../platform/hooks";
 import { fmtCount, fmtMs } from "../platform/format";
 import { useUi } from "../platform/stores/ui";
@@ -84,18 +85,6 @@ export function LayoutTemplate({ tabId, tool, input, onInput, settings }: Layout
       setter(false);
       setPasted(false);
     }, 1500);
-  }, []);
-
-  const jumpToLine = useCallback((line: number) => {
-    const view = inputViewRef.current;
-    if (!view) return;
-    const total = view.state.doc.lines;
-    const pos = view.state.doc.line(Math.max(1, Math.min(line, total))).from;
-    view.dispatch({
-      selection: { anchor: pos },
-      effects: EditorView.scrollIntoView(pos, { y: "center" }),
-    });
-    view.focus();
   }, []);
 
   const doPaste = useCallback(async () => {
@@ -304,7 +293,7 @@ export function LayoutTemplate({ tabId, tool, input, onInput, settings }: Layout
                     <button
                       className="pressable underline decoration-dotted underline-offset-2 hover:text-text"
                       title="跳到输入区该行"
-                      onClick={() => jumpToLine(result.error!.line!)}
+                      onClick={() => jumpToLine(inputViewRef.current, result.error!.line!)}
                     >
                       第 {result.error.line} 行
                     </button>
