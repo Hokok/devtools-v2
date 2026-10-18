@@ -1,18 +1,22 @@
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import { PanelRightClose, PanelRightOpen, X } from "lucide-react";
 import { useTabs } from "../platform/stores/tabs";
 import { useUi } from "../platform/stores/ui";
 import { getTool } from "../platform/registry";
+import { ContextMenu } from "./ContextMenu";
+import { PopoverItem } from "./Popover";
 
-/** Chrome 式 Tab 栏：可多开、中键关闭、拖拽排序（拖拽在 MVP 后补充）。 */
+/** Chrome 式 Tab 栏：可多开、中键关闭、右键菜单（拖拽在 MVP 后补充）。 */
 export function TabBar() {
   const tabs = useTabs((s) => s.tabs);
   const activeId = useTabs((s) => s.activeId);
   const activate = useTabs((s) => s.activate);
   const closeTab = useTabs((s) => s.closeTab);
+  const closeAllTabs = useTabs((s) => s.closeAllTabs);
   const settingsOpen = useUi((s) => s.settingsOpen);
   const toggleSettings = useUi((s) => s.toggleSettings);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
 
   // 同工具多开时给标题加序号，便于区分（按工具预聚合，避免每个 Tab 都 filter 一遍）
   const instances = useMemo(() => {
@@ -56,6 +60,11 @@ export function TabBar() {
                   closeTab(tab.id);
                 }
               }}
+              onContextMenu={(e) => {
+                // 拦掉 WebView 原生右键菜单，换成工作台自己的
+                e.preventDefault();
+                setMenu({ x: e.clientX, y: e.clientY });
+              }}
               title={tool?.meta.description}
               className={[
                 "group flex h-[26px] shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-xs pressable",
@@ -95,6 +104,20 @@ export function TabBar() {
       >
         {settingsOpen ? <PanelRightClose size={15} /> : <PanelRightOpen size={15} />}
       </button>
+
+      {menu && (
+        <ContextMenu x={menu.x} y={menu.y} onClose={() => setMenu(null)}>
+          <PopoverItem
+            icon={<X size={13} />}
+            label="关闭全部标签页"
+            hint={tabs.length > 1 ? `${tabs.length} 个` : undefined}
+            onClick={() => {
+              closeAllTabs();
+              setMenu(null);
+            }}
+          />
+        </ContextMenu>
+      )}
     </div>
   );
 }

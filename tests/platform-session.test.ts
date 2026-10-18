@@ -138,4 +138,22 @@ describe("Tab：带初始输入开标签页 / 载入到激活标签页", () => {
     useTabs.getState().closeTab(id);
     expect(useHistory.getState().byTool["fake-a"].map((e) => e.text)).toContain("bye");
   });
+
+  it("关闭全部标签页：内容逐一留档，回到空状态（欢迎页）", () => {
+    useTabs.getState().openTool("fake-a", "one");
+    useTabs.getState().openTool("fake-b", "two");
+    useTabs.getState().closeAllTabs();
+    expect(useTabs.getState().tabs).toEqual([]);
+    expect(useTabs.getState().activeId).toBeNull();
+    expect(useHistory.getState().byTool["fake-a"].map((e) => e.text)).toContain("one");
+    expect(useHistory.getState().byTool["fake-b"].map((e) => e.text)).toContain("two");
+  });
+
+  it("关闭全部标签页：空内容不留档，无标签页时是空操作", () => {
+    useTabs.getState().openTool("fake-a"); // 空标签页
+    useTabs.getState().closeAllTabs();
+    expect(useHistory.getState().byTool["fake-a"]).toBeUndefined();
+    useTabs.getState().closeAllTabs(); // 已经没有标签页了
+    expect(useTabs.getState().tabs).toEqual([]);
+  });
 });

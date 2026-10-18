@@ -30,6 +30,8 @@ interface TabsState {
   /** initialInput：带初始内容开标签页（发送到 / 文件载入）；省略则开空标签页 */
   openTool: (toolId: string, initialInput?: string) => void;
   closeTab: (id: string) => void;
+  /** 关闭全部标签页：内容逐一留档（口径同逐个关闭），回到空状态（欢迎页） */
+  closeAllTabs: () => void;
   activate: (id: string) => void;
   /** 循环切换 Tab（Ctrl+Tab / Ctrl+Shift+Tab），dir 为 1（下一个）或 -1（上一个） */
   cycleTab: (dir: 1 | -1) => void;
@@ -96,6 +98,15 @@ export const useTabs = create<TabsState>((set, get) => ({
       activeId: id,
       tabs: get().tabs.map((t) => (t.id === id ? { ...t, lastActiveAt: Date.now() } : t)),
     });
+  },
+
+  closeAllTabs() {
+    const { tabs } = get();
+    if (tabs.length === 0) return;
+    // 每个 Tab 的内容都即将消失——逐条留档，与逐个关闭同一口径（空内容会被 remember 忽略）
+    const history = useHistory.getState();
+    for (const t of tabs) history.remember(t.toolId, t.input);
+    set({ tabs: [], activeId: null });
   },
 
   cycleTab(dir) {
