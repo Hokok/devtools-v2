@@ -50,6 +50,18 @@ const darkView = EditorView.theme(
     },
     ".cm-foldGutter span": { color: "#6e7681", fontSize: "16px" },
     ".cm-foldGutter span:hover": { color: "#4493f8" },
+    // 折叠占位（{ … } N 项）：低调可点的徽标，点击展开
+    ".cm-foldPlaceholder": {
+      backgroundColor: "rgba(110, 118, 129, 0.14)",
+      color: "#8d96a0",
+      border: "none",
+      borderRadius: "4px",
+      padding: "0 5px",
+      margin: "0 4px",
+      fontStyle: "italic",
+      fontWeight: 500,
+    },
+    ".cm-foldPlaceholder:hover": { color: "#4493f8" },
   },
   { dark: true },
 );
@@ -116,6 +128,18 @@ const lightView = EditorView.theme(
     },
     ".cm-foldGutter span": { color: "#818b98", fontSize: "16px" },
     ".cm-foldGutter span:hover": { color: "#0969da" },
+    // 折叠占位（{ … } N 项）：低调可点的徽标，点击展开
+    ".cm-foldPlaceholder": {
+      backgroundColor: "rgba(135, 131, 120, 0.16)",
+      color: "#59636e",
+      border: "none",
+      borderRadius: "4px",
+      padding: "0 5px",
+      margin: "0 4px",
+      fontStyle: "italic",
+      fontWeight: 500,
+    },
+    ".cm-foldPlaceholder:hover": { color: "#0969da" },
   },
   { dark: false },
 );

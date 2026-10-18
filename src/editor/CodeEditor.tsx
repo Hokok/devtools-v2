@@ -1,13 +1,14 @@
 import { useEffect, useRef } from "react";
 import type { LanguageSupport } from "@codemirror/language";
+import { Compartment, EditorState, StateEffect, StateField, Transaction } from "@codemirror/state";
+import type { Range } from "@codemirror/state";
 import {
   bracketMatching,
+  codeFolding,
   foldGutter,
   foldKeymap,
   indentOnInput,
 } from "@codemirror/language";
-import { Compartment, EditorState, StateEffect, StateField, Transaction } from "@codemirror/state";
-import type { Range } from "@codemirror/state";
 import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
 import { search, searchKeymap } from "@codemirror/search";
 import {
@@ -22,6 +23,7 @@ import {
 } from "@codemirror/view";
 import type { DecorationSet } from "@codemirror/view";
 import { useUi } from "../platform/stores/ui";
+import { foldPlaceholderText } from "../tools/json-common/fold";
 import { editorTheme } from "./cmTheme";
 
 /** 原位标记（如 JSON 比对的高亮）：offset 对应灌入时的文档，编辑后由编辑器自动映射 */
@@ -98,6 +100,20 @@ export function CodeEditor({
         themeComp.current.of(editorTheme(dark)),
         lineNumbers(),
         foldGutter(),
+        // 折叠占位：Apifox 式「{ … } N 项」计数（json-common/fold，文本侧增强）。
+        // preparePlaceholder 在折叠时算一次文案，widget eq 缓存，不随滚动重算
+        codeFolding({
+          preparePlaceholder: (state, range) =>
+            foldPlaceholderText(state.doc.toString(), range.from, range.to),
+          placeholderDOM: (_view, onclick, prepared) => {
+            const span = document.createElement("span");
+            span.className = "cm-foldPlaceholder";
+            span.textContent = typeof prepared === "string" ? prepared : "…";
+            span.title = "点击展开";
+            span.onclick = onclick;
+            return span;
+          },
+        }),
         highlightActiveLine(),
         highlightActiveLineGutter(),
         drawSelection(),
