@@ -3,8 +3,11 @@
  * - 宽松比较：标量转字符串再比——"1" ≡ 1、true ≡ "true"、null ≡ "null"、1 ≡ 1.0；
  * - 数组整体标记：不逐元素对齐，两侧数组只要不等就整块记一条差异，不深入内部；
  * - 对象递归按键比较；key 顺序、缩进空白不影响结果。
- * 自带位置感知解析：报错行号与 JS 引擎无关，且每个节点携带原文偏移，供编辑器原位高亮。
+ * 位置感知解析来自 ../json-common/scan：报错行号与 JS 引擎无关，且每个节点携带
+ * 原文偏移，供编辑器原位高亮。
  */
+
+import { ScanError, lineAt, parseSpans, type SpanNode } from "../json-common/scan";
 
 export type DiffKind = "only-left" | "only-right" | "changed";
 
@@ -32,156 +35,6 @@ export interface DiffResult {
 }
 
 export const ROOT_PATH = "(根)";
-
-// ————— 位置感知解析 —————
-
-type SpanNode =
-  | {
-      kind: "object";
-      start: number;
-      end: number;
-      props: { key: string; keyStart: number; keyEnd: number; value: SpanNode }[];
-    }
-  | { kind: "array"; start: number; end: number; items: SpanNode[] }
-  | { kind: "scalar"; start: number; end: number; value: unknown };
-
-class ScanError extends Error {
-  constructor(
-    message: string,
-    readonly offset: number,
-  ) {
-    super(message);
-  }
-}
-
-const NUM_RE = /-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/y;
-
-function parseSpans(text: string): SpanNode {
-  const len = text.length;
-  let pos = 0;
-
-  const peek = () => (pos < len ? text[pos] : "");
-  const ws = () => {
-    while (pos < len) {
-      const c = text.charCodeAt(pos);
-      if (c === 32 || c === 9 || c === 10 || c === 13) pos++;
-      else break;
-    }
-  };
-  const fail = (message: string): never => {
-    throw new ScanError(message, pos);
-  };
-
-  function parseValue(): SpanNode {
-    ws();
-    const c = peek();
-    if (c === "{") return parseObject();
-    if (c === "[") return parseArray();
-    const start = pos;
-    if (c === '"') {
-      const value = parseString();
-      return { kind: "scalar", start, end: pos, value };
-    }
-    if (text.startsWith("true", pos)) {
-      pos += 4;
-      return { kind: "scalar", start, end: pos, value: true };
-    }
-    if (text.startsWith("false", pos)) {
-      pos += 5;
-      return { kind: "scalar", start, end: pos, value: false };
-    }
-    if (text.startsWith("null", pos)) {
-      pos += 4;
-      return { kind: "scalar", start, end: pos, value: null };
-    }
-    NUM_RE.lastIndex = pos;
-    const m = NUM_RE.exec(text);
-    if (m && m[0]) {
-      pos = NUM_RE.lastIndex;
-      return { kind: "scalar", start, end: pos, value: Number(m[0]) };
-    }
-    return fail("应为值");
-  }
-
-  function parseObject(): SpanNode {
-    const start = pos++;
-    const props: { key: string; keyStart: number; keyEnd: number; value: SpanNode }[] = [];
-    ws();
-    if (peek() === "}") {
-      pos++;
-      return { kind: "object", start, end: pos, props };
-    }
-    for (;;) {
-      ws();
-      if (peek() !== '"') fail('应为 "key": value');
-      const keyStart = pos;
-      const key = parseString();
-      const keyEnd = pos;
-      ws();
-      if (peek() !== ":") fail('应为 ":"');
-      pos++;
-      const value = parseValue();
-      props.push({ key, keyStart, keyEnd, value });
-      ws();
-      const c = peek();
-      if (c === ",") {
-        pos++;
-        continue;
-      }
-      if (c === "}") {
-        pos++;
-        return { kind: "object", start, end: pos, props };
-      }
-      fail('应为 "," 或 "}"');
-    }
-  }
-
-  function parseArray(): SpanNode {
-    const start = pos++;
-    const items: SpanNode[] = [];
-    ws();
-    if (peek() === "]") {
-      pos++;
-      return { kind: "array", start, end: pos, items };
-    }
-    for (;;) {
-      items.push(parseValue());
-      ws();
-      const c = peek();
-      if (c === ",") {
-        pos++;
-        continue;
-      }
-      if (c === "]") {
-        pos++;
-        return { kind: "array", start, end: pos, items };
-      }
-      fail('应为 "," 或 "]"');
-    }
-  }
-
-  function parseString(): string {
-    const start = pos++;
-    while (pos < len) {
-      const c = text[pos];
-      if (c === '"') {
-        pos++;
-        return JSON.parse(text.slice(start, pos)) as string;
-      }
-      pos += c === "\\" ? 2 : 1;
-    }
-    return fail("字符串未闭合");
-  }
-
-  const node = parseValue();
-  ws();
-  if (pos !== len) fail("值之后存在多余内容");
-  return node;
-}
-
-function lineAt(text: string, offset: number): number {
-  return text.slice(0, Math.min(offset, text.length)).split("\n").length;
-}
 
 function toValue(node: SpanNode): unknown {
   if (node.kind === "scalar") return node.value;
@@ -333,4 +186,21 @@ export function diffJson(leftText: string, rightText: string): DiffResult {
   const entries: DiffEntry[] = [];
   walk(left!, right!, "", entries);
   return { entries };
+}
+
+export const DIFF_KIND_LABEL: Record<DiffKind, string> = {
+  "only-left": "仅左",
+  "only-right": "仅右",
+  changed: "值不同",
+};
+
+/**
+ * 差异清单的纯文本报告——差异比对的"产物"。
+ * 「发送到…」送的就是它：往文本处理里一送就能排序/去重，往别处一送就是一份可写进
+ * PR 或 issue 的变更说明。空清单返回空串（调用方据此禁用动作）。
+ */
+export function diffReport(entries: DiffEntry[]): string {
+  return entries
+    .map((e) => `${e.path}  [${DIFF_KIND_LABEL[e.kind]}]  ${e.left ?? "—"} → ${e.right ?? "—"}`)
+    .join("\n");
 }

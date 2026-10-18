@@ -7,6 +7,8 @@
  * BOM 不在 csv 字符串里——复制/预览保持干净，导出写盘时再加 CSV_BOM。
  */
 
+import { findJsonErrorOffset, lineAt } from "../json-common/scan";
+
 export const CSV_BOM = "\uFEFF";
 
 export interface ExtractError {
@@ -44,11 +46,16 @@ export function extractJson(
   const trimmed = input.trim();
   if (!trimmed) return { keys: [] };
 
+  // 行号按原文算：trim 掉的头部空白里的换行数补进去
+  const lead = input.indexOf(trimmed);
+  let leadLines = 0;
+  for (let i = 0; i < lead; i++) if (input.charCodeAt(i) === 10) leadLines++;
+
   let parsed: unknown;
   try {
     parsed = JSON.parse(trimmed);
   } catch (err) {
-    return { keys: [], error: extractError(err, trimmed) };
+    return { keys: [], error: extractError(err, trimmed, leadLines) };
   }
 
   const located = resolvePath(parsed, pathText);
@@ -271,18 +278,15 @@ function typeName(value: unknown): string {
   }
 }
 
-/** 从 JSON.parse 的报错里尽量还原行号（V8: position N；SpiderMonkey/JSC: line N） */
-function extractError(err: unknown, input: string): ExtractError {
+/** 从 JSON.parse 的报错里尽量还原行号（引擎不给位置时退回自带扫描，见 json-common/scan） */
+function extractError(err: unknown, text: string, leadLines: number): ExtractError {
   const message = err instanceof Error ? err.message : String(err);
-  let line: number | undefined;
 
   const lineMatch = /line (\d+)/i.exec(message);
+  if (lineMatch) return { message, line: leadLines + Number(lineMatch[1]) };
+
   const posMatch = /position (\d+)/i.exec(message);
-  if (lineMatch) {
-    line = Number(lineMatch[1]);
-  } else if (posMatch) {
-    const pos = Math.min(Number(posMatch[1]), input.length);
-    line = input.slice(0, pos).split("\n").length;
-  }
-  return { message, line };
+  const offset = posMatch ? Number(posMatch[1]) : findJsonErrorOffset(text);
+  if (offset === undefined) return { message };
+  return { message, line: leadLines + lineAt(text, offset) };
 }

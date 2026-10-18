@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { diffJson, ROOT_PATH } from "../src/tools/json-diff/diff";
+import { diffJson, diffReport, ROOT_PATH } from "../src/tools/json-diff/diff";
 
 const shapes = (r: ReturnType<typeof diffJson>) =>
   r.entries.map((e) => ({ path: e.path, kind: e.kind }));
@@ -84,5 +84,29 @@ describe("diffJson", () => {
     const r = diffJson('{"a":1}', "");
     expect(r.rightError?.message).toBe("内容为空");
     expect(diffJson("", "").entries).toEqual([]);
+  });
+});
+
+describe("diffReport：差异清单的纯文本产物", () => {
+  it("空清单返回空串（调用方据此禁用发送/复制）", () => {
+    expect(diffReport([])).toBe("");
+    expect(diffReport(diffJson('{"a":1}', '{"a":1}').entries)).toBe("");
+  });
+
+  it("每行一条：路径 + 种类 + 左右值，缺失侧记作 —", () => {
+    const r = diffJson('{"a":1,"b":2}', '{"a":1,"c":3}');
+    expect(diffReport(r.entries)).toBe(
+      ["b  [仅左]  2 → —", "c  [仅右]  — → 3"].join("\n"),
+    );
+  });
+
+  it("值不同用 → 连接两侧", () => {
+    const r = diffJson('{"v":"0.1.0"}', '{"v":"0.2.0"}');
+    expect(diffReport(r.entries)).toBe('v  [值不同]  "0.1.0" → "0.2.0"');
+  });
+
+  it("行数与差异条数一致", () => {
+    const r = diffJson('{"a":1,"b":2,"c":3}', '{"a":9}');
+    expect(diffReport(r.entries).split("\n")).toHaveLength(r.entries.length);
   });
 });

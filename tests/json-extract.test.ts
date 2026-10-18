@@ -144,6 +144,16 @@ describe("extractJson", () => {
     expect(CSV_BOM).toBe("\uFEFF");
   });
 
+  it("解析失败：行号与 JS 引擎无关（自带扫描），且按原文计数", () => {
+    const invalid = '{\n  "a": 1,\n  "b": ,\n}';
+    const r = extractJson(invalid, "", []);
+    expect(r.error).toBeDefined();
+    expect(r.error?.line).toBe(3);
+
+    // 头部空行也计入——用户看到的是原文
+    expect(extractJson(`\n\n${invalid}`, "", []).error?.line).toBe(5);
+  });
+
   it("原型链键名不假命中：constructor 视作缺失列（B3 回归）", () => {
     const r = extractJson(JSON.stringify([{ a: 1 }]), "", ["constructor"]);
     // `in` 会命中 Object.prototype；修复后应把 constructor 当作「勾了但全行缺失」→ 空列
