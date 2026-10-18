@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowDownToLine,
   Check,
@@ -18,6 +18,8 @@ import { fmtCount } from "../../platform/format";
 import { useDebouncedCompute } from "../../platform/hooks";
 import type { ToolComponentProps } from "../../platform/types";
 import { SendToMenu } from "../../components/SendToMenu";
+import { JsonTreeView, ViewToggle, useTreeViewJump } from "../../components/JsonTree";
+import { buildJsonTree } from "../json-common/tree";
 import { CSV_BOM, extractJson } from "./extract";
 
 const JSON_LANG = () => import("@codemirror/lang-json").then((m) => m.json());
@@ -83,6 +85,20 @@ export function JsonExtract({
   const hasOutput = output !== undefined && output !== "";
   const errorBanner = analysis.error ?? (analysis.pathError ? { message: analysis.pathError } : undefined);
   const errorLine = analysis.error?.line;
+
+  // ——— JSON 页签的树视图（ADR-0005）：只读渲染，切换存工具配置；CSV 页签不受影响 ———
+  const setOutputView = useCallback(
+    (mode: "tree" | "text") => onSettingsChange({ outputView: mode }),
+    [onSettingsChange],
+  );
+  const viewMode: "tree" | "text" = settings.outputView === "text" ? "text" : "tree";
+  const { viewRef, jumpTo } = useTreeViewJump(setOutputView);
+  const treeBuild = useMemo(
+    () => (tab === "json" && analysis.json !== undefined ? buildJsonTree(analysis.json) : undefined),
+    [tab, analysis.json],
+  );
+  const showTree = viewMode === "tree" && treeBuild?.kind === "tree";
+  const treeFallback = viewMode === "tree" && treeBuild !== undefined && treeBuild.kind !== "tree";
 
   const doCopy = async () => {
     if (!hasOutput) return;
@@ -280,17 +296,24 @@ export function JsonExtract({
             ))}
           </span>
           <span
-            className={`truncate text-2xs ${valueArrayOn && selected.length !== 1 ? "text-warn" : "text-faint"}`}
+            className={`truncate text-2xs ${
+              treeFallback || (valueArrayOn && selected.length !== 1) ? "text-warn" : "text-faint"
+            }`}
           >
-            {valueArrayOn && selected.length !== 1
-              ? "值数组模式需恰好勾选一列"
-              : tab === "csv" && analysis.csv !== undefined && analysis.columns
-                ? `${analysis.rowCount ?? 0} 行 × ${analysis.columns.length} 列 · 导出自动加 BOM（Excel 兼容）`
-                : selected.length === 0 && !errorBanner
-                  ? "勾选要提取的列"
-                  : undefined}
+            {treeFallback
+              ? "输出过大，已用文本视图"
+              : valueArrayOn && selected.length !== 1
+                ? "值数组模式需恰好勾选一列"
+                : tab === "csv" && analysis.csv !== undefined && analysis.columns
+                  ? `${analysis.rowCount ?? 0} 行 × ${analysis.columns.length} 列 · 导出自动加 BOM（Excel 兼容）`
+                  : selected.length === 0 && !errorBanner
+                    ? "勾选要提取的列"
+                    : undefined}
           </span>
           <span className="ml-auto flex items-center gap-0.5">
+            {tab === "json" && analysis.json !== undefined && (
+              <ViewToggle value={viewMode} onChange={setOutputView} />
+            )}
             <SendToMenu text={output ?? ""} disabled={!hasOutput} />
             <button
               className="icon-btn"
@@ -322,12 +345,17 @@ export function JsonExtract({
               </p>
             )
           ) : (
-            <CodeEditor
-              value={output ?? ""}
-              readOnly
-              language={JSON_LANG}
-              placeholder={errorBanner ? "修正错误后这里显示提取结果" : "投影结果（JSON）"}
-            />
+            showTree && treeBuild ? (
+              <JsonTreeView build={treeBuild} text={analysis.json ?? ""} jumpTo={jumpTo} />
+            ) : (
+              <CodeEditor
+                value={output ?? ""}
+                readOnly
+                language={JSON_LANG}
+                onViewReady={(view) => (viewRef.current = view)}
+                placeholder={errorBanner ? "修正错误后这里显示提取结果" : "投影结果（JSON）"}
+              />
+            )
           )}
         </div>
       </section>

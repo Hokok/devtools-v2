@@ -13,6 +13,7 @@ import {
   UnfoldVertical,
 } from "lucide-react";
 import { CodeEditor } from "../editor/CodeEditor";
+import { buildJsonTree } from "../tools/json-common/tree";
 import { copyText, readText } from "../platform/clipboard";
 import { jumpToLine } from "../platform/editorJump";
 import { useToolTransform } from "../platform/hooks";
@@ -20,6 +21,7 @@ import { fmtCount, fmtMs } from "../platform/format";
 import { useUi } from "../platform/stores/ui";
 import { useTabs } from "../platform/stores/tabs";
 import type { LoadedTool, ToolSettings } from "../platform/types";
+import { JsonTreeView, ViewToggle, useTreeViewJump } from "./JsonTree";
 import { OutputActions } from "./OutputActions";
 
 interface LayoutTemplateProps {
@@ -28,6 +30,8 @@ interface LayoutTemplateProps {
   input: string;
   onInput: (value: string) => void;
   settings: ToolSettings;
+  /** 视图模式（树/文本）等输出侧偏好的写入口（存工具配置，ADR-0005） */
+  onSettingsChange: (patch: ToolSettings) => void;
 }
 
 /**
@@ -35,7 +39,7 @@ interface LayoutTemplateProps {
  * 分隔条可拖拽（比例按工具记忆，双击复位），适配大文本查看；
  * 80% 的工具只写 transform 即可获得完整交互；耗时就地显示。
  */
-export function LayoutTemplate({ tabId, tool, input, onInput, settings }: LayoutTemplateProps) {
+export function LayoutTemplate({ tabId, tool, input, onInput, settings, onSettingsChange }: LayoutTemplateProps) {
   const { result, elapsed, running } = useToolTransform(tool, input, settings, useLiveTick(tool, input));
   /** 通用文本操作的覆盖显示：非空时输出区显示它而非 transform 结果；输入/设置一变即失效 */
   const [patched, setPatched] = useState<{ text: string; label: string } | null>(null);
@@ -63,6 +67,22 @@ export function LayoutTemplate({ tabId, tool, input, onInput, settings }: Layout
   const inputMeta = useMemo(() => (input ? fmtCount(input) : undefined), [input]);
   const effectiveOutput = patched?.text ?? result.output ?? "";
   const hasOutput = effectiveOutput !== "" && !result.error;
+
+  // ——— 树视图（ADR-0005）：输出是 JSON 的模板工具才提供；切换存工具配置 ———
+  const viewMode = settings.outputView === "text" ? "text" : "tree";
+  const setViewMode = useCallback(
+    (mode: "tree" | "text") => onSettingsChange({ outputView: mode }),
+    [onSettingsChange],
+  );
+  const canTree = tool.jsonOutput === true && hasOutput;
+  const treeBuild = useMemo(
+    () => (canTree ? buildJsonTree(effectiveOutput) : undefined),
+    [canTree, effectiveOutput],
+  );
+  /** 树只在合法且未超阈时可渲染；其余情况文本视图兜底（超阈提示进头部 meta） */
+  const showTree = canTree && viewMode === "tree" && treeBuild?.kind === "tree";
+  const treeFallback = canTree && viewMode === "tree" && treeBuild?.kind !== "tree";
+  const { viewRef: outputViewRef, jumpTo } = useTreeViewJump(setViewMode);
 
   // 输入、设置或 transform 结果一变，文本操作的覆盖即失效（避免显示与输入脱节）
   useEffect(() => {
@@ -239,25 +259,29 @@ export function LayoutTemplate({ tabId, tool, input, onInput, settings }: Layout
       <div className={`flex min-h-0 min-w-0 flex-1 ${horizontal ? "flex-row" : "flex-col"}`}>
         <Card
           label="输出"
+          toolbar={canTree ? <ViewToggle value={viewMode} onChange={setViewMode} /> : undefined}
           meta={
-            patched ? (
-              <span className="flex items-center gap-1.5 text-warn">
-                已应用 {patched.label}
-                <button
-                  className="pressable text-2xs text-faint hover:text-text"
-                  onClick={() => setPatched(null)}
-                >
-                  还原
-                </button>
-              </span>
-            ) : running ? (
-              <span className="flex items-center gap-1 text-muted">
-                <LoaderCircle size={11} className="animate-spin" />
-                计算中…
-              </span>
-            ) : result.error ? undefined : hasOutput ? (
-              <span className="text-ok">✓ {fmtMs(elapsed)}</span>
-            ) : undefined
+            <>
+              {treeFallback && <span className="text-warn">输出过大，已用文本视图</span>}
+              {patched ? (
+                <span className="flex items-center gap-1.5 text-warn">
+                  已应用 {patched.label}
+                  <button
+                    className="pressable text-2xs text-faint hover:text-text"
+                    onClick={() => setPatched(null)}
+                  >
+                    还原
+                  </button>
+                </span>
+              ) : running ? (
+                <span className="flex items-center gap-1 text-muted">
+                  <LoaderCircle size={11} className="animate-spin" />
+                  计算中…
+                </span>
+              ) : result.error ? undefined : hasOutput ? (
+                <span className="text-ok">✓ {fmtMs(elapsed)}</span>
+              ) : undefined}
+            </>
           }
           actions={
             <>
@@ -304,7 +328,17 @@ export function LayoutTemplate({ tabId, tool, input, onInput, settings }: Layout
             </div>
           )}
           <div className={result.error ? "h-full min-h-0 flex-1 opacity-45" : "h-full min-h-0 flex-1"}>
-            <CodeEditor value={effectiveOutput} readOnly placeholder="转换结果" language={language} />
+            {showTree && treeBuild ? (
+              <JsonTreeView build={treeBuild} text={effectiveOutput} jumpTo={jumpTo} />
+            ) : (
+              <CodeEditor
+                value={effectiveOutput}
+                readOnly
+                placeholder="转换结果"
+                language={language}
+                onViewReady={(view) => (outputViewRef.current = view)}
+              />
+            )}
           </div>
         </Card>
       </div>
@@ -327,17 +361,21 @@ function Card({
   label,
   meta,
   actions,
+  toolbar,
   children,
 }: {
   label: string;
   meta?: React.ReactNode;
   actions?: React.ReactNode;
+  /** 紧跟标签的小型切换件（如树/文本分段）；与 meta 同行 */
+  toolbar?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
     <section className="card flex h-full min-h-0 w-full flex-col overflow-hidden">
       <header className="flex h-8 shrink-0 items-center gap-2 px-3">
         <span className="text-2xs font-medium tracking-[0.08em] text-muted uppercase">{label}</span>
+        {toolbar}
         <span className="truncate text-2xs text-faint">{meta}</span>
         <span className="ml-auto flex items-center gap-0.5">{actions}</span>
       </header>

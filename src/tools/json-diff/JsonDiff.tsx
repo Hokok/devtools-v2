@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { EditorView } from "@codemirror/view";
 import {
   ArrowLeftRight,
@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import { CodeEditor, type EditorMark } from "../../editor/CodeEditor";
 import { OutputActions } from "../../components/OutputActions";
+import { JsonTreeView, ViewToggle, useTreeViewJump } from "../../components/JsonTree";
+import { buildJsonTree } from "../json-common/tree";
 import { readText } from "../../platform/clipboard";
 import { useDebouncedCompute } from "../../platform/hooks";
 import type { ToolComponentProps } from "../../platform/types";
@@ -57,10 +59,18 @@ const MARK_CLASS: Record<DiffKind, string> = {
  * 差异计算是线性扫描，实时进行——但走防抖，避免大文本下逐键重算卡顿。
  * 右侧内容存在 Tab 级 auxInput（store）而非组件局部态，LRU 卸载不丢。
  */
-export function JsonDiff({ input, onInput, auxInput, onAuxInput }: ToolComponentProps) {
+export function JsonDiff({ input, onInput, auxInput, onAuxInput, settings, onSettingsChange }: ToolComponentProps) {
   const [listOpen, setListOpen] = useState(true);
   const leftView = useRef<EditorView | null>(null);
   const rightView = useRef<EditorView | null>(null);
+
+  // 视图模式（ADR-0005）：两侧共享一个值；默认文本——两侧都是可编辑输入区，
+  // 默认树会把输入锁成只读，与「输入区保持可编辑」冲突
+  const sideView = settings.sideView === "tree" ? "tree" : "text";
+  const setSideView = useCallback(
+    (mode: "tree" | "text") => onSettingsChange({ sideView: mode }),
+    [onSettingsChange],
+  );
 
   const result = useDebouncedCompute(
     () => diffJson(input, auxInput),
@@ -78,14 +88,23 @@ export function JsonDiff({ input, onInput, auxInput, onAuxInput }: ToolComponent
     onAuxInput(left);
   };
 
+  /** 差异行点击：树态下先切回文本视图再定位（编辑器常驻隐藏，一帧后滚动） */
   const jump = (range: [number, number] | undefined, side: "left" | "right") => {
-    const view = side === "left" ? leftView.current : rightView.current;
-    if (!view || !range) return;
-    view.dispatch({
-      selection: { anchor: range[0], head: range[1] },
-      effects: EditorView.scrollIntoView(range[0], { y: "center" }),
-    });
-    view.focus();
+    const dispatch = () => {
+      const view = side === "left" ? leftView.current : rightView.current;
+      if (!view || !range) return;
+      view.dispatch({
+        selection: { anchor: range[0], head: range[1] },
+        effects: EditorView.scrollIntoView(range[0], { y: "center" }),
+      });
+      view.focus();
+    };
+    if (sideView === "tree") {
+      onSettingsChange({ sideView: "text" });
+      requestAnimationFrame(dispatch);
+      return;
+    }
+    dispatch();
   };
 
   let summary: { text: string; ok: boolean };
@@ -112,6 +131,8 @@ export function JsonDiff({ input, onInput, auxInput, onAuxInput }: ToolComponent
           onChange={onInput}
           marks={leftMarks}
           error={result.leftError}
+          treeMode={sideView === "tree"}
+          onToggleView={setSideView}
           onViewReady={(view) => (leftView.current = view)}
           actions={
             <>
@@ -137,6 +158,8 @@ export function JsonDiff({ input, onInput, auxInput, onAuxInput }: ToolComponent
           onChange={onAuxInput}
           marks={rightMarks}
           error={result.rightError}
+          treeMode={sideView === "tree"}
+          onToggleView={setSideView}
           onViewReady={(view) => (rightView.current = view)}
         />
       </div>
@@ -205,6 +228,8 @@ function SideCard({
   onChange,
   marks,
   error,
+  treeMode,
+  onToggleView,
   onViewReady,
   actions,
 }: {
@@ -213,9 +238,18 @@ function SideCard({
   onChange: (value: string) => void;
   marks: EditorMark[];
   error?: DiffError;
+  /** 树视图/文本视图（ADR-0005）；两侧共享同一取值 */
+  treeMode: boolean;
+  onToggleView: (mode: "tree" | "text") => void;
   onViewReady: (view: EditorView | null) => void;
   actions?: React.ReactNode;
 }) {
+  const { viewRef, jumpTo } = useTreeViewJump(onToggleView);
+  // 树只在这一侧的文本合法且未超阈时可用（阈值回落见 CONTEXT.md「树视图阈值」）
+  const treeBuild = useMemo(() => (treeMode ? buildJsonTree(value) : undefined), [treeMode, value]);
+  const showTree = treeBuild?.kind === "tree";
+  const treeFallback = treeMode && treeBuild !== undefined && treeBuild.kind !== "tree";
+
   return (
     <section className="card flex min-w-0 flex-1 flex-col overflow-hidden">
       <header className="flex h-8 shrink-0 items-center gap-2 px-3">
@@ -228,8 +262,10 @@ function SideCard({
             {error.line !== undefined && `（第 ${error.line} 行）`}
           </span>
         )}
+        {treeFallback && <span className="truncate text-2xs text-warn">输出过大，已用文本视图</span>}
         <span className="ml-auto flex items-center gap-0.5">
           {actions}
+          <ViewToggle value={treeMode ? "tree" : "text"} onChange={onToggleView} />
           <PasteButton onPaste={onChange} />
           <button className="icon-btn" title="清空" disabled={!value} onClick={() => onChange("")}>
             <Eraser size={13} />
@@ -237,14 +273,25 @@ function SideCard({
         </span>
       </header>
       <div className="min-h-0 flex-1">
-        <CodeEditor
-          value={value}
-          onChange={onChange}
-          language={JSON_LANG}
-          marks={marks}
-          onViewReady={onViewReady}
-          placeholder={side === "left" ? "粘贴左侧 JSON…" : "粘贴右侧 JSON…"}
-        />
+        {showTree && (
+          <div className="h-full">
+            <JsonTreeView build={treeBuild} text={value} marks={marks} jumpTo={jumpTo} />
+          </div>
+        )}
+        {/* 编辑器常驻（树态隐藏）：差异清单的跳转始终需要一个活着的 View */}
+        <div className={showTree ? "hidden" : "h-full"}>
+          <CodeEditor
+            value={value}
+            onChange={onChange}
+            language={JSON_LANG}
+            marks={marks}
+            onViewReady={(view) => {
+              viewRef.current = view;
+              onViewReady(view);
+            }}
+            placeholder={side === "left" ? "粘贴左侧 JSON…" : "粘贴右侧 JSON…"}
+          />
+        </div>
       </div>
     </section>
   );
