@@ -24,7 +24,7 @@ export function SideNav() {
   return (
     <aside
       className="z-10 flex shrink-0 flex-col transition-[width] duration-200 ease-out"
-      style={{ width: collapsed ? 36 : 140 }}
+      style={{ width: collapsed ? 36 : 160 }}
     >
       {/* 品牌区 + 收缩开关（顶部，与右侧设置面板的开关位置对称）；
           收起时品牌标识本身即展开按钮——窄条里第一个可点元素就是「展开」，不用找 */}
