@@ -15,6 +15,7 @@ import { saveTextFile } from "../../platform/saveFile";
 import { fmtCount } from "../../platform/format";
 import { useDebouncedCompute } from "../../platform/hooks";
 import type { ToolComponentProps } from "../../platform/types";
+import { SendToMenu } from "../../components/SendToMenu";
 import { CSV_BOM, extractJson } from "./extract";
 
 const JSON_LANG = () => import("@codemirror/lang-json").then((m) => m.json());
@@ -270,6 +271,7 @@ export function JsonExtract({
                   : undefined}
           </span>
           <span className="ml-auto flex items-center gap-0.5">
+            <SendToMenu text={output ?? ""} disabled={!hasOutput} />
             <button
               className="icon-btn"
               title={copied ? "已复制" : "复制输出"}

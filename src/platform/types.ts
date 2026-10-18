@@ -107,6 +107,11 @@ export interface ToolImpl {
   inputPlaceholder?: string;
   /** 空输入时每秒重跑 transform（时间戳工具的"实时当前时刻"） */
   live?: boolean;
+  /**
+   * 是否在输出区提供通用文本操作（见 CONTEXT.md：通用文本操作）。
+   * 默认开启；工具可显式置 false 关闭（如输出是结构化表格时）。
+   */
+  outputTextActions?: boolean;
   /** 编辑器语言包，按需加载（如 JSON 高亮），跟随工具实现进分包 */
   language?: () => Promise<import("@codemirror/language").LanguageSupport>;
   transform?: (input: string, settings: ToolSettings) => TransformResult | Promise<TransformResult>;

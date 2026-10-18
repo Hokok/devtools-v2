@@ -13,6 +13,8 @@ export function GlobalSettingsDialog() {
   const setThemeMode = useUi((s) => s.setThemeMode);
   const layoutDirection = useUi((s) => s.layoutDirection);
   const setLayoutDirection = useUi((s) => s.setLayoutDirection);
+  const autoCopyOutput = useUi((s) => s.autoCopyOutput);
+  const setAutoCopyOutput = useUi((s) => s.setAutoCopyOutput);
   const close = () => useUi.setState({ globalSettingsOpen: false });
 
   if (!open) return null;
@@ -69,6 +71,31 @@ export function GlobalSettingsDialog() {
           <p className="mt-2 text-2xs leading-4 text-faint">
             输入/输出区的排列方向，对所有工具生效；分栏比例仍按工具记忆。
           </p>
+        </section>
+
+        <section className="mt-5">
+          <h3 className="text-2xs font-medium tracking-[0.08em] text-muted uppercase">输出</h3>
+          <div
+            className="mt-2 flex cursor-pointer items-start justify-between gap-3"
+            onClick={() => setAutoCopyOutput(!autoCopyOutput)}
+          >
+            <span>
+              <span className="block text-sm text-text">输出就绪即自动复制</span>
+              <span className="mt-0.5 block text-2xs leading-4 text-faint">
+                每次算出结果就写进系统剪贴板（模板型工具生效）；结果同时进入剪贴板历史。
+              </span>
+            </span>
+            <button
+              role="switch"
+              aria-checked={autoCopyOutput}
+              aria-label="输出就绪即自动复制"
+              className={`mt-0.5 h-[18px] w-8 shrink-0 rounded-full transition-colors ${autoCopyOutput ? "bg-accent" : "border border-line-strong bg-raise"}`}
+            >
+              <span
+                className={`pointer-events-none block h-3 w-3 rounded-full transition-all ${autoCopyOutput ? "ml-[17px] bg-white" : "ml-[3px] bg-faint"}`}
+              />
+            </button>
+          </div>
         </section>
 
         <div className="mt-5 flex justify-end">

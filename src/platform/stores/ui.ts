@@ -6,6 +6,8 @@ export type ThemeMode = "dark" | "light" | "system";
 export type Theme = "dark" | "light";
 /** 布局模板输入/输出区的排列方向：上下分栏 | 左右分栏 */
 export type LayoutDirection = "vertical" | "horizontal";
+/** 底部工具弹窗：一次只开一个 */
+export type UtilityDialog = "history" | "clipboard" | null;
 
 function applyTheme(theme: Theme) {
   if (typeof document === "undefined") return; // node 测试环境无 DOM
@@ -65,6 +67,10 @@ interface UiState {
   globalSettingsOpen: boolean;
   paletteOpen: boolean;
   exitConfirmOpen: boolean;
+  /** 底部工具弹窗（会话态）：会话历史 / 剪贴板历史 */
+  utilityDialog: UtilityDialog;
+  /** 输出就绪即自动复制到系统剪贴板（应用级偏好，默认关） */
+  autoCopyOutput: boolean;
   /** 布局模板输入/输出分栏比例，按工具记忆（0.15–0.85） */
   splitRatios: Record<string, number>;
   setThemeMode: (mode: ThemeMode) => void;
@@ -75,6 +81,8 @@ interface UiState {
   toggleSettings: () => void;
   setGlobalSettingsOpen: (open: boolean) => void;
   setPaletteOpen: (open: boolean) => void;
+  setUtilityDialog: (dialog: UtilityDialog) => void;
+  setAutoCopyOutput: (on: boolean) => void;
   setSplitRatio: (toolId: string, ratio: number) => void;
   /** 拖拽结束时统一落盘（拖动过程只写内存，避免 pointermove 级 IPC 风暴） */
   commitSplitRatio: () => void;
@@ -92,6 +100,8 @@ export const useUi = create<UiState>((set, get) => ({
   globalSettingsOpen: false,
   paletteOpen: false,
   exitConfirmOpen: false,
+  utilityDialog: null,
+  autoCopyOutput: false,
   splitRatios: {},
 
   setThemeMode(mode) {
@@ -131,6 +141,13 @@ export const useUi = create<UiState>((set, get) => ({
 
   setPaletteOpen: (open) => set({ paletteOpen: open }),
 
+  setUtilityDialog: (dialog) => set({ utilityDialog: dialog }),
+
+  setAutoCopyOutput(on) {
+    set({ autoCopyOutput: on });
+    void storage.set("ui.autoCopyOutput", on);
+  },
+
   setSplitRatio(toolId, ratio) {
     const clamped = Math.min(0.85, Math.max(0.15, ratio));
     set({ splitRatios: { ...get().splitRatios, [toolId]: clamped } });
@@ -143,13 +160,14 @@ export const useUi = create<UiState>((set, get) => ({
   async hydrate() {
     if (hydrated) return;
     hydrated = true;
-    const [nav, panel, mode, legacyTheme, direction, ratios] = await Promise.all([
+    const [nav, panel, mode, legacyTheme, direction, ratios, autoCopy] = await Promise.all([
       storage.get<boolean>("ui.navCollapsed").catch(() => undefined),
       storage.get<boolean>("ui.settingsOpen").catch(() => undefined),
       storage.get<ThemeMode>("ui.themeMode").catch(() => undefined),
       storage.get<Theme>("ui.theme").catch(() => undefined),
       storage.get<LayoutDirection>("ui.layoutDirection").catch(() => undefined),
       storage.get<Record<string, number>>("ui.splitRatios").catch(() => undefined),
+      storage.get<boolean>("ui.autoCopyOutput").catch(() => undefined),
     ]);
     // 旧版只有 ui.theme（dark/light）——迁移为 themeMode；全新安装跟随系统
     const themeMode: ThemeMode = mode ?? legacyTheme ?? "system";
@@ -162,6 +180,7 @@ export const useUi = create<UiState>((set, get) => ({
       theme,
       layoutDirection: direction ?? "vertical",
       splitRatios: ratios ?? {},
+      autoCopyOutput: autoCopy ?? false,
     });
     applyTheme(theme);
     watchSystemMode(themeMode, (t) => {

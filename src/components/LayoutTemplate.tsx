@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
-import type { EditorView } from "@codemirror/view";
+import { EditorView } from "@codemirror/view";
 import { foldAll, unfoldAll } from "@codemirror/language";
 import {
   ArrowLeftRight,
   Check,
   ClipboardPaste,
-  Copy,
   Eraser,
   FoldVertical,
   LoaderCircle,
@@ -18,9 +17,12 @@ import { copyText, readText } from "../platform/clipboard";
 import { useToolTransform } from "../platform/hooks";
 import { fmtCount, fmtMs } from "../platform/format";
 import { useUi } from "../platform/stores/ui";
+import { useTabs } from "../platform/stores/tabs";
 import type { LoadedTool, ToolSettings } from "../platform/types";
+import { OutputActions } from "./OutputActions";
 
 interface LayoutTemplateProps {
+  tabId: string;
   tool: LoadedTool;
   input: string;
   onInput: (value: string) => void;
@@ -32,14 +34,15 @@ interface LayoutTemplateProps {
  * 分隔条可拖拽（比例按工具记忆，双击复位），适配大文本查看；
  * 80% 的工具只写 transform 即可获得完整交互；耗时就地显示。
  */
-export function LayoutTemplate({ tool, input, onInput, settings }: LayoutTemplateProps) {
+export function LayoutTemplate({ tabId, tool, input, onInput, settings }: LayoutTemplateProps) {
   const { result, elapsed, running } = useToolTransform(tool, input, settings, useLiveTick(tool, input));
-  const [copied, setCopied] = useState(false);
+  /** 通用文本操作的覆盖显示：非空时输出区显示它而非 transform 结果；输入/设置一变即失效 */
+  const [patched, setPatched] = useState<{ text: string; label: string } | null>(null);
   const [pasted, setPasted] = useState(false);
   const [pasteFailed, setPasteFailed] = useState(false);
-  const copiedTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const feedbackTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const inputViewRef = useRef<EditorView | null>(null);
+  const autoCopiedRef = useRef<string | null>(null);
 
   // 分栏：比例按工具持久化，拖拽中直接改 store（clamp 在 store 内做）；
   // 方向全局统一（vertical 上下 | horizontal 左右），同一比例两种方向共用
@@ -52,13 +55,27 @@ export function LayoutTemplate({ tool, input, onInput, settings }: LayoutTemplat
   const [dragging, setDragging] = useState(false);
 
   useEffect(() => () => {
-    clearTimeout(copiedTimer.current);
     clearTimeout(feedbackTimer.current);
   }, []);
 
   const language = useMemo(() => tool.language, [tool]);
   const inputMeta = useMemo(() => (input ? fmtCount(input) : undefined), [input]);
-  const hasOutput = result.output !== undefined && result.output !== "";
+  const effectiveOutput = patched?.text ?? result.output ?? "";
+  const hasOutput = effectiveOutput !== "" && !result.error;
+
+  // 输入、设置或 transform 结果一变，文本操作的覆盖即失效（避免显示与输入脱节）
+  useEffect(() => {
+    setPatched(null);
+  }, [result.output, input, settings]);
+
+  // 输出就绪即自动复制（应用级偏好，默认关）
+  const autoCopy = useUi((s) => s.autoCopyOutput);
+  useEffect(() => {
+    if (!autoCopy || running || !hasOutput) return;
+    if (autoCopiedRef.current === effectiveOutput) return;
+    autoCopiedRef.current = effectiveOutput;
+    void copyText(effectiveOutput);
+  }, [autoCopy, running, hasOutput, effectiveOutput]);
 
   const flash = useCallback((setter: (v: boolean) => void) => {
     setter(true);
@@ -69,18 +86,24 @@ export function LayoutTemplate({ tool, input, onInput, settings }: LayoutTemplat
     }, 1500);
   }, []);
 
-  const doCopy = useCallback(async () => {
-    if (!result.output) return;
-    await copyText(result.output);
-    setCopied(true);
-    clearTimeout(copiedTimer.current);
-    copiedTimer.current = setTimeout(() => setCopied(false), 1200);
-  }, [result.output]);
+  const jumpToLine = useCallback((line: number) => {
+    const view = inputViewRef.current;
+    if (!view) return;
+    const total = view.state.doc.lines;
+    const pos = view.state.doc.line(Math.max(1, Math.min(line, total))).from;
+    view.dispatch({
+      selection: { anchor: pos },
+      effects: EditorView.scrollIntoView(pos, { y: "center" }),
+    });
+    view.focus();
+  }, []);
 
   const doPaste = useCallback(async () => {
     try {
       const text = await readText();
       if (text) {
+        // 粘贴会覆盖原输入：把旧内容留档进会话历史（见 CONTEXT.md）
+        useTabs.getState().rememberInput(tabId);
         onInput(text);
         setPasted(true);
         setPasteFailed(false);
@@ -91,7 +114,12 @@ export function LayoutTemplate({ tool, input, onInput, settings }: LayoutTemplat
       setPasted(false);
       flash(setPasteFailed);
     }
-  }, [onInput, flash]);
+  }, [tabId, onInput, flash]);
+
+  const loadSample = useCallback(() => {
+    useTabs.getState().rememberInput(tabId);
+    onInput(tool.sample ?? "");
+  }, [tabId, tool.sample, onInput]);
 
   return (
     <div ref={containerRef} className={`flex h-full min-h-0 p-2 ${horizontal ? "flex-row" : "flex-col"}`}>
@@ -123,7 +151,7 @@ export function LayoutTemplate({ tool, input, onInput, settings }: LayoutTemplat
                 </>
               )}
               {tool.sample && (
-                <button className="icon-btn" title="载入示例" onClick={() => onInput(tool.sample ?? "")}>
+                <button className="icon-btn" title="载入示例" onClick={loadSample}>
                   <Sparkles size={13} />
                 </button>
               )}
@@ -223,7 +251,17 @@ export function LayoutTemplate({ tool, input, onInput, settings }: LayoutTemplat
         <Card
           label="输出"
           meta={
-            running ? (
+            patched ? (
+              <span className="flex items-center gap-1.5 text-warn">
+                已应用 {patched.label}
+                <button
+                  className="pressable text-2xs text-faint hover:text-text"
+                  onClick={() => setPatched(null)}
+                >
+                  还原
+                </button>
+              </span>
+            ) : running ? (
               <span className="flex items-center gap-1 text-muted">
                 <LoaderCircle size={11} className="animate-spin" />
                 计算中…
@@ -238,13 +276,20 @@ export function LayoutTemplate({ tool, input, onInput, settings }: LayoutTemplat
                 className="icon-btn"
                 title="结果作为输入"
                 disabled={!hasOutput}
-                onClick={() => onInput(result.output ?? "")}
+                onClick={() => {
+                  useTabs.getState().rememberInput(tabId);
+                  onInput(effectiveOutput);
+                }}
               >
                 <ArrowLeftRight size={13} />
               </button>
-              <button className="icon-btn" title={copied ? "已复制" : "复制输出"} disabled={!hasOutput} onClick={doCopy}>
-                {copied ? <Check size={13} className="text-ok" /> : <Copy size={13} />}
-              </button>
+              <OutputActions
+                text={effectiveOutput}
+                disabled={!hasOutput}
+                fileName={`${tool.id}.txt`}
+                showTextActions={tool.outputTextActions !== false}
+                onTextAction={(result, label) => setPatched({ text: result, label })}
+              />
             </>
           }
         >
@@ -253,12 +298,24 @@ export function LayoutTemplate({ tool, input, onInput, settings }: LayoutTemplat
               <TriangleAlert size={13} className="mt-0.5 shrink-0" />
               <span className="break-all">
                 {result.error.message}
-                {result.error.line !== undefined && `（第 ${result.error.line} 行）`}
+                {result.error.line !== undefined && (
+                  <>
+                    {"（"}
+                    <button
+                      className="pressable underline decoration-dotted underline-offset-2 hover:text-text"
+                      title="跳到输入区该行"
+                      onClick={() => jumpToLine(result.error!.line!)}
+                    >
+                      第 {result.error.line} 行
+                    </button>
+                    {"）"}
+                  </>
+                )}
               </span>
             </div>
           )}
           <div className={result.error ? "h-full min-h-0 flex-1 opacity-45" : "h-full min-h-0 flex-1"}>
-            <CodeEditor value={result.output ?? ""} readOnly placeholder="转换结果" language={language} />
+            <CodeEditor value={effectiveOutput} readOnly placeholder="转换结果" language={language} />
           </div>
         </Card>
       </div>

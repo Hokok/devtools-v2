@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import { Command } from "lucide-react";
+import { useCallback, useEffect } from "react";
+import { ClipboardList, Command, FolderOpen, History } from "lucide-react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { SideNav } from "./components/SideNav";
 import { TabBar } from "./components/TabBar";
@@ -7,10 +7,14 @@ import { ToolHost } from "./components/ToolHost";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { CommandPalette } from "./components/CommandPalette";
 import { GlobalSettingsDialog } from "./components/GlobalSettingsDialog";
+import { UtilityDialogs } from "./components/UtilityDialogs";
 import { useSettings } from "./platform/stores/settings";
+import { useLibrary } from "./platform/stores/library";
 import { useTabs } from "./platform/stores/tabs";
 import { useUi } from "./platform/stores/ui";
 import { getTool } from "./platform/registry";
+import { openTextFile, readDroppedFile } from "./platform/fileOpen";
+import { useDragDropFiles } from "./platform/useFileDrop";
 
 const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform);
@@ -20,6 +24,13 @@ export default function App() {
   useGlobalShortcuts();
   useWindowLifecycle();
   useResizeFreeze();
+
+  const dropFile = useCallback((file: File) => {
+    void readDroppedFile(file).then((loaded) => {
+      if (loaded.text) useTabs.getState().loadTextIntoActive(loaded.text);
+    });
+  }, []);
+  const dragging = useDragDropFiles(dropFile);
 
   return (
     <div className="relative z-10 flex h-full">
@@ -32,7 +43,16 @@ export default function App() {
       <SettingsPanel />
       <CommandPalette />
       <GlobalSettingsDialog />
+      <UtilityDialogs />
       <ConfirmExitDialog />
+      {dragging && (
+        <div className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center bg-[var(--overlay)] backdrop-blur-[2px]">
+          <div className="card flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm text-text">
+            <FolderOpen size={15} className="text-accent" />
+            松开以载入文本到当前标签页
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -42,6 +62,7 @@ function useAppBootstrap() {
   useEffect(() => {
     void useSettings.getState().hydrate();
     void useUi.getState().hydrate();
+    void useLibrary.getState().hydrate();
   }, []);
 }
 
@@ -171,12 +192,18 @@ function ConfirmExitDialog() {
   );
 }
 
-/** 底部状态条：仪器面板的最后一排指示灯。 */
+/** 底部状态条：仪器面板的最后一排指示灯 + 便捷入口（打开文件 / 会话历史 / 剪贴板历史 / 命令面板）。 */
 function StatusBar() {
   const tabs = useTabs((s) => s.tabs);
   const activeId = useTabs((s) => s.activeId);
   const activeToolId = tabs.find((t) => t.id === activeId)?.toolId;
   const setPaletteOpen = useUi((s) => s.setPaletteOpen);
+  const setUtilityDialog = useUi((s) => s.setUtilityDialog);
+  const openFile = () => {
+    void openTextFile().then((file) => {
+      if (file) useTabs.getState().loadTextIntoActive(file.text);
+    });
+  };
 
   return (
     <footer className="flex h-6 shrink-0 items-center gap-3 px-3 text-2xs text-faint">
@@ -184,14 +211,34 @@ function StatusBar() {
       <span>{activeToolId ? getTool(activeToolId)?.meta.name : "就绪"}</span>
       <span className="text-line-strong">|</span>
       <span>{tabs.length} 个标签页</span>
-      <button
-        className="ml-auto flex items-center gap-1.5 transition-colors hover:text-muted"
-        onClick={() => setPaletteOpen(true)}
-      >
-        <Command size={9} />
-        <span className="kbd">K</span>
-        <span>命令面板</span>
-      </button>
+      <span className="ml-auto flex items-center gap-0.5">
+        <button className="icon-btn h-5 w-5" title="打开文件（也可拖拽文件到窗口）" onClick={openFile}>
+          <FolderOpen size={12} />
+        </button>
+        <button
+          className="icon-btn h-5 w-5"
+          title="会话历史"
+          disabled={!activeToolId}
+          onClick={() => setUtilityDialog("history")}
+        >
+          <History size={12} />
+        </button>
+        <button
+          className="icon-btn h-5 w-5"
+          title="剪贴板历史"
+          onClick={() => setUtilityDialog("clipboard")}
+        >
+          <ClipboardList size={12} />
+        </button>
+        <button
+          className="flex items-center gap-1.5 px-1 transition-colors hover:text-muted"
+          onClick={() => setPaletteOpen(true)}
+        >
+          <Command size={9} />
+          <span className="kbd">K</span>
+          <span>命令面板</span>
+        </button>
+      </span>
     </footer>
   );
 }

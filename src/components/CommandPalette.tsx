@@ -1,9 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { Columns2, CornerDownLeft, Search, Settings, SunMoon } from "lucide-react";
+import {
+  ClipboardList,
+  Columns2,
+  CornerDownLeft,
+  FolderOpen,
+  History,
+  Search,
+  Settings,
+  Star,
+  SunMoon,
+} from "lucide-react";
 import { fuzzyScore } from "../platform/fuzzy";
+import { openTextFile } from "../platform/fileOpen";
 import { registry } from "../platform/registry";
 import { TOOL_GROUPS } from "../platform/types";
+import { useLibrary } from "../platform/stores/library";
 import { useTabs } from "../platform/stores/tabs";
 import { useUi } from "../platform/stores/ui";
 
@@ -44,6 +56,34 @@ const ACTIONS: PaletteAction[] = [
     icon: Columns2,
     run: () => useUi.getState().toggleLayoutDirection(),
   },
+  {
+    id: "open-file",
+    name: "打开文件…",
+    description: "读入文本文件到当前标签页的输入区",
+    keywords: ["打开", "文件", "导入", "载入", "file", "open"],
+    icon: FolderOpen,
+    run: () => {
+      void openTextFile().then((file) => {
+        if (file) useTabs.getState().loadTextIntoActive(file.text);
+      });
+    },
+  },
+  {
+    id: "open-history",
+    name: "会话历史",
+    description: "当前工具最近输入的留档，可回填",
+    keywords: ["历史", "最近", "记录", "history"],
+    icon: History,
+    run: () => useUi.getState().setUtilityDialog("history"),
+  },
+  {
+    id: "open-clipboard-history",
+    name: "剪贴板历史",
+    description: "应用内复制过的文本",
+    keywords: ["剪贴板", "粘贴板", "复制", "clipboard"],
+    icon: ClipboardList,
+    run: () => useUi.getState().setUtilityDialog("clipboard"),
+  },
 ];
 
 type Entry =
@@ -55,18 +95,28 @@ export function CommandPalette() {
   const open = useUi((s) => s.paletteOpen);
   const setOpen = useUi((s) => s.setPaletteOpen);
   const openTool = useTabs((s) => s.openTool);
+  const favorites = useLibrary((s) => s.favorites);
+  const recents = useLibrary((s) => s.recents);
   const [query, setQuery] = useState("");
   const [cursor, setCursor] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const results = useMemo<Entry[]>(() => {
+    const favoriteSet = new Set(favorites);
     const toolEntries: Entry[] = registry.map((tool) => {
       const scores = [
         fuzzyScore(query, tool.meta.name) ?? -Infinity,
         ...(tool.meta.keywords ?? []).map((k) => (fuzzyScore(query, k) ?? -Infinity) * 0.92),
         (fuzzyScore(query, tool.meta.id) ?? -Infinity) * 0.8,
       ];
-      return { kind: "tool", tool, score: Math.max(...scores) };
+      let score = Math.max(...scores);
+      if (score > -Infinity) {
+        // 收藏 / 最近使用加权（见 CONTEXT.md）：常驻与刚用过的排前面
+        if (favoriteSet.has(tool.meta.id)) score += 12;
+        const recentIndex = recents.indexOf(tool.meta.id);
+        if (recentIndex >= 0) score += Math.max(1, 8 - recentIndex);
+      }
+      return { kind: "tool", tool, score };
     });
     const actionEntries: Entry[] = ACTIONS.map((action) => {
       const scores = [
@@ -80,7 +130,7 @@ export function CommandPalette() {
       .filter((r) => r.score > -Infinity)
       .sort((a, b) => b.score - a.score)
       .slice(0, 12);
-  }, [query]);
+  }, [query, favorites, recents]);
 
   useEffect(() => {
     if (open) {
@@ -154,6 +204,7 @@ export function CommandPalette() {
             const description =
               entry.kind === "tool" ? entry.tool.meta.description : entry.action.description;
             const tag = entry.kind === "tool" ? groupName(entry.tool.meta.group) : "命令";
+            const favorited = entry.kind === "tool" && favorites.includes(entry.tool.meta.id);
             const key = entry.kind === "tool" ? entry.tool.meta.id : entry.action.id;
             const Icon = icon;
             const selected = i === cursor;
@@ -174,7 +225,10 @@ export function CommandPalette() {
                     </span>
                     <span className="block truncate text-2xs text-faint">{description}</span>
                   </span>
-                  <span className="shrink-0 text-2xs text-faint">{tag}</span>
+                  <span className="shrink-0 text-2xs text-faint">
+                    {favorited && <Star size={10} className="mr-0.5 inline fill-accent text-accent" />}
+                    {tag}
+                  </span>
                   {selected && <CornerDownLeft size={12} className="shrink-0 text-accent" />}
                 </button>
               </li>

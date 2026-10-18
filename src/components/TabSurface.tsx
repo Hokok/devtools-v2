@@ -57,6 +57,7 @@ export function TabSurface({ tab, active }: { tab: Tab; active: boolean }) {
   } else {
     body = (
       <LayoutTemplate
+        tabId={tab.id}
         tool={tool}
         input={tab.input}
         onInput={(value) => setInput(tab.id, value)}
