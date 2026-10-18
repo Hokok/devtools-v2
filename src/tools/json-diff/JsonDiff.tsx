@@ -248,7 +248,7 @@ function SideCard({
   // 树只在这一侧的文本合法且未超阈时可用（阈值回落见 CONTEXT.md「树视图阈值」）
   const treeBuild = useMemo(() => (treeMode ? buildJsonTree(value) : undefined), [treeMode, value]);
   const showTree = treeBuild?.kind === "tree";
-  const treeFallback = treeMode && treeBuild !== undefined && treeBuild.kind !== "tree";
+  const treeFallback = treeMode && !!value.trim() && treeBuild !== undefined && treeBuild.kind !== "tree";
 
   return (
     <section className="card flex min-w-0 flex-1 flex-col overflow-hidden">
