@@ -44,8 +44,9 @@
 
 ## 未签名的现状（个人开源的常见取舍）
 
-- **macOS**：未做 Apple 公证（$99/年），用户首次打开需 `右键 App → 打开`，或
-  `xattr -cr /Applications/DevTools.app`。
+- **macOS**：未做 Apple 公证（$99/年）。浏览器下载带隔验证标记的安装包，
+  Apple Silicon 上打开直接报「已损坏，无法打开」而非「无法验证开发者」；
+  终端跑 `sudo xattr -rd com.apple.quarantine /Applications/DevTools.app` 即可（仅首次）。
 - **Windows**：无 EV 证书，SmartScreen 会提示"更多信息 → 仍要运行"。
 - 口碑起来后再评估购买证书，属于独立决策。
 
