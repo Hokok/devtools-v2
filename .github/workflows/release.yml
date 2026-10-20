@@ -54,7 +54,7 @@ jobs:
         with:
           tagName: v__VERSION__
           releaseName: "DevTools v__VERSION__"
-          releaseBody: "下载对应平台的安装包。macOS：应用未做 Apple 公证，安装后若提示「已损坏，无法打开」，在终端执行 `sudo xattr -rd com.apple.quarantine /Applications/DevTools.app` 即可正常打开（仅首次）。"
+          releaseBody: "下载对应平台的安装包。macOS 首次打开请右键 App 选择「打开」（未签名公证）。"
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
