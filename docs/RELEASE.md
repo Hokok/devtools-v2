@@ -18,10 +18,15 @@
 ## 每次发版
 
 1. 确认 `src-tauri/tauri.conf.json` 与 `package.json` 的 `version` 已提升。
-2. `git tag v0.x.0 && git push origin v0.x.0` → Release 工作流自动构建
+2. **升级过任一 `@tauri-apps/*` npm 包时**：Rust crate 版本必须同步——tauri 会硬校验
+   同名插件的 npm/crate major.minor 一致，不一致 `tauri build` 直接失败（也在
+   本地开发首次 `cargo check` 时报 "version mismatched Tauri packages"）。
+   处理：`cargo update -p <crate>` 提升 Cargo.lock；crates.io 抽风时用镜像
+   `cargo update -p <crate> --config 'source.crates-io.replace-with="rsproxy"' --config 'source.rsproxy.registry="sparse+https://rsproxy.cn/index/"'`。
+3. `git tag v0.x.0 && git push origin v0.x.0` → Release 工作流自动构建
    macOS (Apple Silicon + Intel) 与 Windows 安装包，并生成 `latest.json`。
-3. 到 GitHub Releases 检查 Draft：安装包齐全、`latest.json` 存在且签名有效 → **Publish**。
-4. 已安装用户会在下次启动时收到更新提示（启动延迟 3s 静默检查一次，发现新版右下角弹提示条；手动检查在全局设置「关于」）。
+4. 到 GitHub Releases 检查 Draft：安装包齐全、`latest.json` 存在且签名有效 → **Publish**。
+5. 已安装用户会在下次启动时收到更新提示（启动延迟 3s 静默检查一次，发现新版右下角弹提示条；手动检查在全局设置「关于」）。
 
 ## 发版前自测更新链路（本地 mock，约 2 分钟）
 
