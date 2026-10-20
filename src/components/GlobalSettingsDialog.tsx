@@ -2,6 +2,7 @@ import type { LucideIcon } from "lucide-react";
 import { Columns2, Rows2 } from "lucide-react";
 import { useUi } from "../platform/stores/ui";
 import type { LayoutDirection, ThemeMode } from "../platform/stores/ui";
+import { useUpdater, checkForUpdateManually } from "../platform/stores/updater";
 
 /**
  * 全局设置（独立于工具级设置面板）：外观模式三选一 + 工作区布局方向。
@@ -98,6 +99,8 @@ export function GlobalSettingsDialog() {
           </div>
         </section>
 
+        <AboutSection />
+
         <div className="mt-5 flex justify-end">
           <button onClick={close} className="btn btn-primary">
             完成
@@ -106,6 +109,37 @@ export function GlobalSettingsDialog() {
       </div>
       <style>{`@keyframes palette-pop { from { opacity: 0; transform: translateY(-4px) scale(0.985); } to { opacity: 1; transform: none; } }`}</style>
     </div>
+  );
+}
+
+/** 关于与更新：当前版本展示 + 手动检查入口。状态由 updater store 驱动，与新版本提示条共用。 */
+function AboutSection() {
+  const currentVersion = useUpdater((s) => s.currentVersion);
+  const status = useUpdater((s) => s.status);
+  const nextVersion = useUpdater((s) => s.nextVersion);
+  const errorMessage = useUpdater((s) => s.errorMessage);
+  const busy = status === "checking" || status === "downloading";
+
+  let hint = "";
+  if (status === "up-to-date") hint = "已是最新版本。";
+  else if (status === "available") hint = `发现新版本 v${nextVersion}，可在提示条里安装。`;
+  else if (status === "downloading") hint = "正在下载更新…";
+  else if (status === "restart-ready") hint = `v${nextVersion} 已就绪，重启应用即生效。`;
+  else if (status === "error") hint = `检查失败：${errorMessage}`;
+
+  return (
+    <section className="mt-5">
+      <h3 className="text-2xs font-medium tracking-[0.08em] text-muted uppercase">关于</h3>
+      <div className="mt-2 flex items-center justify-between gap-3">
+        <span>
+          <span className="block text-sm text-text">DevTools{currentVersion ? ` v${currentVersion}` : ""}</span>
+          <span className="mt-0.5 block text-2xs leading-4 text-faint">{hint || "检查是否有可用的新版本。"}</span>
+        </span>
+        <button className="btn btn-ghost shrink-0" disabled={busy} onClick={() => void checkForUpdateManually()}>
+          {busy ? "检查中…" : "检查更新"}
+        </button>
+      </div>
+    </section>
   );
 }
 

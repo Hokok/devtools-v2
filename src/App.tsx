@@ -8,6 +8,8 @@ import { SettingsPanel } from "./components/SettingsPanel";
 import { CommandPalette } from "./components/CommandPalette";
 import { GlobalSettingsDialog } from "./components/GlobalSettingsDialog";
 import { UtilityDialogs } from "./components/UtilityDialogs";
+import { UpdateBanner } from "./components/UpdateBanner";
+import { useUpdater } from "./platform/stores/updater";
 import { useSettings } from "./platform/stores/settings";
 import { useLibrary } from "./platform/stores/library";
 import { useTabs } from "./platform/stores/tabs";
@@ -24,6 +26,7 @@ export default function App() {
   useGlobalShortcuts();
   useWindowLifecycle();
   useResizeFreeze();
+  useStartupUpdateCheck();
 
   const dropFile = useCallback((file: File) => {
     void readDroppedFile(file).then((loaded) => {
@@ -44,6 +47,7 @@ export default function App() {
       <CommandPalette />
       <GlobalSettingsDialog />
       <UtilityDialogs />
+      <UpdateBanner />
       <ConfirmExitDialog />
       {dragging && (
         <div className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center bg-[var(--overlay)] backdrop-blur-[2px]">
@@ -165,6 +169,16 @@ function useResizeFreeze() {
       clearTimeout(timer);
       document.body.classList.remove("resizing");
     };
+  }, []);
+}
+
+/** 启动静默检查：错开水合与首屏渲染，延迟后悄悄查一次新版本；有更新时才弹右下角提示条。 */
+function useStartupUpdateCheck() {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void useUpdater.getState().check({ silent: true });
+    }, 3000);
+    return () => clearTimeout(timer);
   }, []);
 }
 
